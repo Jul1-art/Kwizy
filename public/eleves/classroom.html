@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="../assets/kwizy-loader.js"></script>
+  <script src="../assets/kwizy-local-db.js"></script>
 
   <style>
     :root {
@@ -533,13 +534,10 @@
       showFeedback('Vérification du code...', 'loading');
 
       try {
-        let apiUrl = `../../api/v1/lookup.php?share_code=${encodeURIComponent(code)}`;
-        if (!window.location.pathname.includes('/public/')) {
-          apiUrl = apiUrl.replace('../../', '../');
-        }
-
-        const res = await fetch(apiUrl);
-        const data = await res.json();
+        // Use local DB for quiz lookup
+        const data = KwizyLocalDB.handleRequest
+          ? await (await KwizyLocalDB.handleRequest(`../../api/v1/lookup.php?share_code=${encodeURIComponent(code)}`)).json()
+          : { status: 'not_found', message: 'Base locale non disponible.' };
 
         if (data.status === 'found') {
           showFeedback('Code valide ! Prépare-toi...', 'success');
@@ -562,7 +560,7 @@
         }
       } catch (err) {
         console.error('Lookup error:', err);
-        showFeedback('Erreur de connexion au serveur.', 'error');
+        showFeedback('Erreur lors de la recherche du quiz.', 'error');
       }
     }
 

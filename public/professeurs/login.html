@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="../manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="../assets/kwizy-local-db.js"></script>
     <style>
         :root {
             --bg: #ffffff;
@@ -661,20 +662,9 @@
                 mot_de_passe: pass
             };
 
-            let apiPath = '../../api/v1/auth.php';
-            if (!window.location.pathname.includes('/public/')) {
-                apiPath = '../api/v1/auth.php';
-            }
-
             try {
-                const res = await fetch(apiPath, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const result = await res.json();
+                const result = await KwizyLocalDB.auth.register(data);
                 if (result.success) {
-                    localStorage.setItem('kwizySession', JSON.stringify(result.user));
                     document.getElementById('welcome-name').textContent = data.nom.split(' ')[0];
                     goTo(7);
                 } else {
@@ -684,7 +674,7 @@
                     btn.textContent = 'Créer mon compte';
                 }
             } catch (e) {
-                err.textContent = 'Serveur injoignable.';
+                err.textContent = 'Erreur lors de la création du compte.';
                 err.style.display = 'block';
                 btn.disabled = false;
                 btn.textContent = 'Créer mon compte';
@@ -703,20 +693,9 @@
             btn.disabled = true;
             btn.textContent = 'Connexion…';
 
-            let apiPath = '../../api/v1/auth.php';
-            if (!window.location.pathname.includes('/public/')) {
-                apiPath = '../api/v1/auth.php';
-            }
-
             try {
-                const res = await fetch(apiPath, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'login', email, mot_de_passe: pass })
-                });
-                const result = await res.json();
+                const result = await KwizyLocalDB.auth.login({ email, mot_de_passe: pass });
                 if (result.success) {
-                    localStorage.setItem('kwizySession', JSON.stringify(result.user));
                     document.getElementById('welcome-name').textContent = result.user.nom.split(' ')[0];
                     goTo(7);
                 } else {
@@ -726,7 +705,7 @@
                     btn.textContent = 'Se connecter';
                 }
             } catch (e) {
-                err.textContent = 'Serveur injoignable.';
+                err.textContent = 'Erreur lors de la connexion.';
                 err.style.display = 'block';
                 btn.disabled = false;
                 btn.textContent = 'Se connecter';

@@ -57,6 +57,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="../AI/KwizyEngine.js?v=20260626.13"></script>
   <script src="../assets/kwizy-loader.js?v=20260626.2"></script>
+  <script src="../assets/kwizy-local-db.js?v=1"></script>
   <script src="https://unpkg.com/marked@9.1.6/marked.min.js"></script>
 
   <style>
@@ -7880,6 +7881,10 @@ RÈGLES :
     window.render = render;
 
     window.onload = () => {
+      // Install local DB to intercept all API calls (runs without a server)
+      if (window.KwizyLocalDB) {
+        KwizyLocalDB.install(actions);
+      }
       actions.init();
     };
 

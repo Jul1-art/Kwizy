@@ -13,6 +13,7 @@
   <link rel="icon" type="image/png" href="../assets/icon-192.png">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="../assets/kwizy-loader.js"></script>
+  <script src="../assets/kwizy-local-db.js"></script>
   <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
   <style>
     :root {
@@ -1375,6 +1376,13 @@
     const memoryTabId = Math.random().toString(36).substr(2, 9);
     function sendHeartbeat(statusOverride) {
       if (!quizCode || !studentId || reviewed) return;
+
+      // Local mode: use KwizyLocalDB (no server needed)
+      if (window.KwizyLocalDB) {
+        // In local mode, session is always 'active' — nothing to check
+        return;
+      }
+
       let apiBase = '../../api/v1';
       if (!window.location.pathname.includes('/public/')) apiBase = '../api/v1';
       const params = new URLSearchParams({
@@ -1388,29 +1396,10 @@
         body: JSON.stringify({ answers, tabId: memoryTabId })
       }).then(r => r.json()).then(data => {
         if (!data.success) return;
-
-        // 1. Détecter si la session a été clôturée par le prof
-        //    'termine' = quiz terminé par le prof
-        //    'publie'  = salle d'attente, ne signifie PAS que la session est close !
-        if (data.session_statut === 'termine') {
-          showSessionEndNotice();
-          return;
-        }
-
-        // Si le quiz repasse en 'publie' pendant un quiz actif => le prof a stoppé la session live
-        if (quizActive && !reviewed && data.quiz_statut === 'publie') {
-          showSessionEndNotice();
-          return;
-        }
-
-        // 2. Détecter les verrouillages (triche)
-        if (data.status === 'locked' && !isLocked) {
-          handleCheatDetection('server_lock');
-        }
-        // 3. Détecter les déverrouillages
-        if (data.status === 'active' && isLocked) {
-          resumeQuiz();
-        }
+        if (data.session_statut === 'termine') { showSessionEndNotice(); return; }
+        if (quizActive && !reviewed && data.quiz_statut === 'publie') { showSessionEndNotice(); return; }
+        if (data.status === 'locked' && !isLocked) handleCheatDetection('server_lock');
+        if (data.status === 'active' && isLocked) resumeQuiz();
       }).catch(() => { });
     }
 
@@ -1493,6 +1482,23 @@
           apiBase = '../api/v1';
         }
 
+        // LOCAL MODE: skip server session join / status check
+        if (window.KwizyLocalDB) {
+          // In local mode, quiz always starts immediately (no waiting room)
+          const localDraft = restoreDraft();
+          if (localDraft && localDraft.answers && typeof localDraft.answers === 'object') {
+            answers = { ...answers, ...localDraft.answers };
+            if (Number.isInteger(localDraft.current) && localDraft.current >= 0 && localDraft.current < questions.length) {
+              current = localDraft.current;
+            }
+          }
+          document.getElementById('quiz-zone').style.display = 'block';
+          quizActive = true;
+          startHeartbeat();
+          renderQuestion();
+          return;
+        }
+
         // 1. Rejoindre la session côté serveur pour apparaître dans le monitoring
         try {
           const joinRes = await fetch(`${apiBase}/session.php?action=join`, {
@@ -1526,9 +1532,7 @@
           const data = await res.json();
 
           if (data.status === 'locked' || data.status === 'cheating') {
-            // Verrouillage persistant : écran noir immédiat !
             document.getElementById('anti-cheat-overlay').classList.add('visible');
-
             document.body.style.overflow = 'hidden';
             isLocked = true;
             quizActive = true;
@@ -1547,7 +1551,7 @@
             answers = { ...answers, ...data.savedAnswers };
           }
           if (data.currentQuestion > 0) {
-            current = data.currentQuestion - 1; // Le serveur stocke 1-based, on utilise 0-based
+            current = data.currentQuestion - 1;
           }
         } catch (e) { }
 
@@ -1559,7 +1563,6 @@
           document.getElementById('waiting-screen').classList.add('visible');
           document.getElementById('waiting-student-info').textContent = `${studentName} · ${studentClass || 'Sans classe'}`;
 
-          // Afficher le bouton IA si pas désactivé
           if (!quiz.settings || quiz.settings.allowFlashcards !== false) {
             document.getElementById('ai-revisions-container').style.display = 'block';
             document.getElementById('btn-ai-revisions').addEventListener('click', () => loadFlashcards(quiz, apiBase));
@@ -1580,9 +1583,6 @@
         document.getElementById('quiz-zone').style.display = 'block';
         quizActive = true;
 
-        // (Le plein écran a déjà été forcé de manière synchrone lors du clic sur OK)
-
-        // Démarrer le Pulsar (Heartbeat toutes les 3s)
         startHeartbeat();
         renderQuestion();
 
@@ -1591,6 +1591,7 @@
         showError("Une erreur inattendue est survenue au démarrage.");
       }
     }
+
 
     function showSessionEndNotice() {
       const overlay = document.createElement('div');
@@ -2188,7 +2189,7 @@
       document.getElementById('results-sub').textContent = msg;
       lucide.createIcons();
 
-      // Envoi des résultats au serveur (avec résilience offline)
+      // Envoi des résultats (local ou serveur)
       if (quizCode && studentId) {
         const payload = {
           code: quizCode,
@@ -2200,30 +2201,34 @@
           answers: detailedAnswers
         };
 
-        // Détermination dynamique de l'API base
-        let apiBase = '../../api/v1';
-        if (!window.location.pathname.includes('/public/')) {
-          apiBase = '../api/v1';
-        }
-
-        const submitResult = async (data) => {
-          try {
-            const res = await fetch(`${apiBase}/session.php?action=finish_and_submit`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data)
-            });
-            if (res.ok) {
-              localStorage.removeItem('kwizy_pending_submission');
-              console.log("Résultat envoyé avec succès");
-            }
-          } catch (e) {
-            console.warn("Échec envoi (Offline), stockage en attente...");
-            localStorage.setItem('kwizy_pending_submission', JSON.stringify(data));
+        if (window.KwizyLocalDB) {
+          // Local mode: save directly to localStorage
+          KwizyLocalDB.results.submit(payload);
+          console.log("Résultat sauvegardé localement.");
+        } else {
+          // Server mode
+          let apiBase = '../../api/v1';
+          if (!window.location.pathname.includes('/public/')) {
+            apiBase = '../api/v1';
           }
-        };
-
-        submitResult(payload);
+          const submitResult = async (data) => {
+            try {
+              const res = await fetch(`${apiBase}/session.php?action=finish_and_submit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+              });
+              if (res.ok) {
+                localStorage.removeItem('kwizy_pending_submission');
+                console.log("Résultat envoyé avec succès");
+              }
+            } catch (e) {
+              console.warn("Échec envoi (Offline), stockage en attente...");
+              localStorage.setItem('kwizy_pending_submission', JSON.stringify(data));
+            }
+          };
+          submitResult(payload);
+        }
       }
       stopQuizTimer();
       clearDraft();
