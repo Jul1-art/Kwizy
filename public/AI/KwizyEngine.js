@@ -434,6 +434,58 @@ window.KwizyAIEngine = {
             .ai-mic-bars span:nth-child(5) { height: 5px; animation-delay: 0.05s; }
             @keyframes aiMicWave { 0%,100% { transform: scaleY(0.4); } 50% { transform: scaleY(1); } }
 
+            /* VoiceGlow Effect (inspired by VoiceGlowKit / Libraries.dev) */
+            .voice-glow-wrapper {
+                position: relative;
+                width: 100%;
+                border-radius: 24px;
+                padding: 3px;
+                transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
+            }
+
+            .voice-glow-wrapper.voice-active {
+                box-shadow: 0 0 45px -5px rgba(99, 102, 241, 0.45), 0 0 80px -10px rgba(168, 85, 247, 0.35);
+                transform: translateY(-2px);
+            }
+
+            .voice-glow-canvas {
+                position: absolute;
+                inset: -6px;
+                width: calc(100% + 12px);
+                height: calc(100% + 12px);
+                border-radius: 28px;
+                pointer-events: none;
+                z-index: 0;
+                opacity: 0;
+                transition: opacity 0.4s ease;
+                filter: blur(14px);
+            }
+
+            .voice-glow-wrapper.voice-active .voice-glow-canvas {
+                opacity: 1;
+            }
+
+            .voice-glow-beam {
+                position: absolute;
+                bottom: -2px;
+                left: 10%;
+                right: 10%;
+                height: 4px;
+                background: linear-gradient(90deg, transparent, #38bdf8 20%, #818cf8 50%, #c084fc 80%, transparent);
+                border-radius: 4px;
+                filter: blur(3px);
+                opacity: 0;
+                transform: scaleX(0.4);
+                transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                pointer-events: none;
+                z-index: 10;
+            }
+
+            .voice-glow-wrapper.voice-active .voice-glow-beam {
+                opacity: 1;
+                transform: scaleX(1);
+            }
+
             /* Chips suggestions */
             .ai-chips {
                 display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
@@ -474,36 +526,40 @@ window.KwizyAIEngine = {
                 <div class="w-full mb-1 pl-1">${this.renderAttachments()}</div>
 
                 <div class="ai-bar-wrap">
-                    <div class="ai-bar"
-                         ondragover="event.preventDefault();"
-                         ondragleave="event.preventDefault();"
-                         ondrop="event.preventDefault();KwizyAIEngine.handleFileUpload({target:{files:event.dataTransfer.files}});">
-                        <input type="file" id="ai-file-upload-docs" accept=".txt,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" style="display:none;" onchange="KwizyAIEngine.handleImportFile(event)">
-                        <input type="file" id="ai-file-upload-photos" accept="image/*,.heic,.heif,.webp" style="display:none;" onchange="KwizyAIEngine.handleImportFile(event)">
-                        <div class="ai-attach-wrap">
-                          <div class="ai-import-popup">
-                            <button type="button" class="ai-import-btn" onclick="document.getElementById('ai-file-upload-photos').click()">
-                              <i class="fas fa-image"></i>Importer des images
+                    <div class="voice-glow-wrapper" id="hub-voice-glow-wrap">
+                        <canvas id="hub-voice-glow-canvas" class="voice-glow-canvas"></canvas>
+                        <div class="voice-glow-beam"></div>
+                        <div class="ai-bar"
+                             ondragover="event.preventDefault();"
+                             ondragleave="event.preventDefault();"
+                             ondrop="event.preventDefault();KwizyAIEngine.handleFileUpload({target:{files:event.dataTransfer.files}});">
+                            <input type="file" id="ai-file-upload-docs" accept=".txt,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" style="display:none;" onchange="KwizyAIEngine.handleImportFile(event)">
+                            <input type="file" id="ai-file-upload-photos" accept="image/*,.heic,.heif,.webp" style="display:none;" onchange="KwizyAIEngine.handleImportFile(event)">
+                            <div class="ai-attach-wrap">
+                              <div class="ai-import-popup">
+                                <button type="button" class="ai-import-btn" onclick="document.getElementById('ai-file-upload-photos').click()">
+                                  <i class="fas fa-image"></i>Importer des images
+                                </button>
+                                <button type="button" class="ai-import-btn" onclick="document.getElementById('ai-file-upload-docs').click()">
+                                  <i class="fas fa-file-lines"></i>Importer des fichiers
+                                </button>
+                              </div>
+                              <button type="button" class="ai-attach" title="Importer">
+                                <i class="fas fa-plus"></i>
+                              </button>
+                            </div>
+                            <textarea
+                                id="ai-landing-input" class="ai-input"
+                                placeholder="${this.t('describeSubject')}" rows="1"
+                                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(this.value.trim().length>0)KwizyAIEngine.switchToForm(this.value);}"
+                                oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';const hasT=this.value.trim().length>0;const mb=document.getElementById('hub-mic-btn');if(mb){mb.classList.toggle('has-text',hasT);}"
+                            ></textarea>
+                            <button type="button" id="hub-mic-btn" class="ai-mic-send" title="Dicter votre question">
+                                <i class="fas fa-microphone"></i>
+                                <div class="ai-mic-bars"><span></span><span></span><span></span><span></span><span></span></div>
+                                <i class="fas fa-arrow-up" id="hub-icon-send" style="display:none"></i>
                             </button>
-                            <button type="button" class="ai-import-btn" onclick="document.getElementById('ai-file-upload-docs').click()">
-                              <i class="fas fa-file-lines"></i>Importer des fichiers
-                            </button>
-                          </div>
-                          <button type="button" class="ai-attach" title="Importer">
-                            <i class="fas fa-plus"></i>
-                          </button>
                         </div>
-                        <textarea
-                            id="ai-landing-input" class="ai-input"
-                            placeholder="${this.t('describeSubject')}" rows="1"
-                            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(this.value.trim().length>0)KwizyAIEngine.switchToForm(this.value);}"
-                            oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';const hasT=this.value.trim().length>0;const mb=document.getElementById('hub-mic-btn');if(mb){mb.classList.toggle('has-text',hasT);}"
-                        ></textarea>
-                        <button type="button" id="hub-mic-btn" class="ai-mic-send" title="Dicter votre question">
-                            <i class="fas fa-microphone"></i>
-                            <div class="ai-mic-bars"><span></span><span></span><span></span><span></span><span></span></div>
-                            <i class="fas fa-arrow-up" id="hub-icon-send" style="display:none"></i>
-                        </button>
                     </div>
                 </div>
 
@@ -546,6 +602,128 @@ window.KwizyAIEngine = {
     _micLandingRestartTimer: null,
     _micLandingBase: '',
     _micLandingFinalText: '',
+    _voiceGlow: {
+        audioCtx: null,
+        analyser: null,
+        mediaStream: null,
+        dataArray: null,
+        rafId: null,
+        smoothVolume: 0,
+        start: function() {
+            const wrap = document.getElementById('hub-voice-glow-wrap');
+            const canvas = document.getElementById('hub-voice-glow-canvas');
+            if (!wrap || !canvas) return;
+
+            wrap.classList.add('voice-active');
+            const self = this;
+
+            const setupAudio = (stream) => {
+                self.mediaStream = stream;
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContext) return;
+                    if (!self.audioCtx) self.audioCtx = new AudioContext();
+                    if (self.audioCtx.state === 'suspended') self.audioCtx.resume();
+
+                    const source = self.audioCtx.createMediaStreamSource(stream);
+                    self.analyser = self.audioCtx.createAnalyser();
+                    self.analyser.fftSize = 64;
+                    self.analyser.smoothingTimeConstant = 0.8;
+                    source.connect(self.analyser);
+                    self.dataArray = new Uint8Array(self.analyser.frequencyBinCount);
+                } catch (e) {
+                    console.warn('VoiceGlow audio meter fallback to simulated wave', e);
+                }
+            };
+
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                    .then(setupAudio)
+                    .catch(() => {});
+            }
+
+            const ctx = canvas.getContext('2d');
+            let t = 0;
+
+            const renderFrame = () => {
+                self.rafId = requestAnimationFrame(renderFrame);
+                t += 0.04;
+
+                const rect = wrap.getBoundingClientRect();
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                const w = (rect.width + 12) * dpr;
+                const h = (rect.height + 12) * dpr;
+
+                if (canvas.width !== w || canvas.height !== h) {
+                    canvas.width = w;
+                    canvas.height = h;
+                }
+
+                ctx.clearRect(0, 0, w, h);
+
+                let vol = 0;
+                if (self.analyser && self.dataArray) {
+                    self.analyser.getByteFrequencyData(self.dataArray);
+                    let sum = 0;
+                    for (let i = 0; i < self.dataArray.length; i++) sum += self.dataArray[i];
+                    vol = sum / (self.dataArray.length * 255);
+                } else {
+                    // Gentle breathing fallback if audio node is pending
+                    vol = 0.25 + 0.15 * Math.sin(t * 2);
+                }
+
+                self.smoothVolume += (vol - self.smoothVolume) * 0.2;
+                const v = Math.min(Math.max(self.smoothVolume, 0.05), 1);
+
+                // Multi-color dynamic gradients inspired by VoiceGlow (Libraries.dev)
+                const cx = w / 2;
+                const cy = h / 2;
+                const radius = Math.max(w, h) * (0.45 + v * 0.4);
+
+                // Main vibrant glow centered at the bottom of the input
+                const gradBottom = ctx.createRadialGradient(cx, h * 0.9, 10, cx, h * 0.9, radius);
+                gradBottom.addColorStop(0, `rgba(56, 189, 248, ${0.75 * v + 0.2})`);      // Cyan #38bdf8
+                gradBottom.addColorStop(0.35, `rgba(99, 102, 241, ${0.65 * v + 0.2})`);   // Indigo #6366f1
+                gradBottom.addColorStop(0.7, `rgba(168, 85, 247, ${0.45 * v + 0.1})`);    // Purple #a855f7
+                gradBottom.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = gradBottom;
+                ctx.beginPath();
+                ctx.roundRect ? ctx.roundRect(0, 0, w, h, 28 * dpr) : ctx.rect(0, 0, w, h);
+                ctx.fill();
+
+                // Travelling energetic voice pulse
+                const pulseX = cx + Math.sin(t * 1.5) * (w * 0.35);
+                const pulseGrad = ctx.createRadialGradient(pulseX, h * 0.95, 5, pulseX, h * 0.95, radius * 0.6);
+                pulseGrad.addColorStop(0, `rgba(236, 72, 153, ${0.6 * v})`); // Hot pink
+                pulseGrad.addColorStop(0.5, `rgba(99, 102, 241, ${0.4 * v})`);
+                pulseGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = pulseGrad;
+                ctx.beginPath();
+                ctx.roundRect ? ctx.roundRect(0, 0, w, h, 28 * dpr) : ctx.rect(0, 0, w, h);
+                ctx.fill();
+            };
+
+            renderFrame();
+        },
+        stop: function() {
+            const wrap = document.getElementById('hub-voice-glow-wrap');
+            if (wrap) wrap.classList.remove('voice-active');
+            if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; }
+            if (this.mediaStream) {
+                this.mediaStream.getTracks().forEach(t => t.stop());
+                this.mediaStream = null;
+            }
+            this.analyser = null;
+            this.smoothVolume = 0;
+            const canvas = document.getElementById('hub-voice-glow-canvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+    },
 
     _initLandingMic: function() {
         const micBtn = document.getElementById('hub-mic-btn');
@@ -630,6 +808,7 @@ window.KwizyAIEngine = {
             self._micLandingBase = ta ? ta.value.trim() : '';
             self._micLandingFinalText = '';
             self._micLandingRec = buildRec();
+            self._voiceGlow.start();
             try { self._micLandingRec.start(); } catch(e) {}
         }
 
@@ -639,12 +818,14 @@ window.KwizyAIEngine = {
             clearTimeout(self._micLandingRestartTimer);
             micBtn.classList.add('stopping');
             micBtn.classList.remove('recording');
+            self._voiceGlow.stop();
             try { self._micLandingRec.stop(); } catch(e) { cleanup(); }
         }
 
         function hardStop() {
             self._micLandingState = 'stopping';
             clearTimeout(self._micLandingRestartTimer);
+            self._voiceGlow.stop();
             try { self._micLandingRec.abort(); } catch(e) {}
             cleanup();
         }
@@ -653,6 +834,7 @@ window.KwizyAIEngine = {
             self._micLandingState = 'idle';
             micBtn.classList.remove('recording', 'stopping');
             micBtn.title = 'Dicter votre question';
+            self._voiceGlow.stop();
             const ta = document.getElementById('ai-landing-input');
             if (ta) { ta.value = ta.value.trim(); ta.dispatchEvent(new Event('input')); ta.focus(); }
         }
