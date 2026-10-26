@@ -108,6 +108,15 @@ Kwizy is an **open source** initiative under the Apache 2.0 license. Everyone is
 
 ---
 
+## 👥 Contributors & Core Team
+
+- **Jules Ferrier** ([@Jul1-art](https://github.com/Jul1-art)) - Co-creator & Developer
+- **Elior Pons** ([@Elpo55](https://github.com/Elpo55)) - Co-creator & Contributor
+
+We also welcome and deeply appreciate all contributions from the open-source community!
+
+---
+
 ## 📄 License
 
 This project is licensed under the [Apache License 2.0](LICENSE). You are free to use, modify, distribute, and sublicense this software according to the terms of the Apache 2.0 License.
