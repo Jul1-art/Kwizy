@@ -1941,6 +1941,34 @@
         <div class="massive-text reveal-on-scroll"><span>K</span><span>W</span><span>I</span><span>Z</span><span>Y</span></div>
     </footer>
     <script> document.addEventListener('DOMContentLoaded', () => {
+            // Theme Management
+            const applyTheme = (theme) => {
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.classList.remove('light');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.classList.add('light');
+                }
+                const themeIcon = document.getElementById('theme-icon');
+                if (themeIcon) {
+                    themeIcon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
+                }
+                localStorage.setItem('kwizy-theme', theme);
+                lucide.createIcons();
+            };
+
+            const currentTheme = localStorage.getItem('kwizy-theme') || 'light';
+            applyTheme(currentTheme);
+
+            const themeBtn = document.getElementById('theme-toggle');
+            if (themeBtn) {
+                themeBtn.onclick = () => {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    applyTheme(isDark ? 'light' : 'dark');
+                };
+            }
+
             lucide.createIcons();
             const dict = {
                 fr: {

@@ -390,9 +390,11 @@
             const applyTheme = (t) => {
                 if (t === 'dark') {
                     document.documentElement.classList.add('dark');
+                    document.documentElement.classList.remove('light');
                     document.getElementById('theme-icon').className = 'fas fa-sun';
                 } else {
                     document.documentElement.classList.remove('dark');
+                    document.documentElement.classList.add('light');
                     document.getElementById('theme-icon').className = 'fas fa-moon';
                 }
                 localStorage.setItem('kwizy-theme', t);
