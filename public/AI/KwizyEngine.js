@@ -517,8 +517,71 @@ window.KwizyAIEngine = {
         `;
     },
 
+    parsePromptParams: function (text) {
+        if (!text) return {};
+        const lower = text.toLowerCase();
+        const res = {};
+
+        // 1. Détection du nombre de questions
+        // Ex: "10 questions", "quiz de 8 questions", "5 qcm", "20 items"
+        const countMatch = lower.match(/(?:^|\b)(\d{1,2})\s*(?:questions?|qcm|items?|q\b)/i) ||
+                           lower.match(/(?:combien|nombre|total)\s*:\s*(\d{1,2})/i);
+        if (countMatch && countMatch[1]) {
+            const c = parseInt(countMatch[1]);
+            if (c >= 1 && c <= 25) res.count = c;
+        }
+
+        // 2. Détection du niveau de difficulté
+        // beginner / débutant / facile / simple / enfant
+        if (/\b(d[eé]butant|facile|simple|faciles|facilité|cm1|cm2|primaire|enfant|novice|beginner|easy)\b/i.test(lower)) {
+            res.difficulty = 'beginner';
+        }
+        // advanced / difficile / dur / complexe / expert / lycée / prépa / master / expert / advanced / hard
+        else if (/\b(difficile|dur|avanc[eé]|complexe|expert|lyc[eé]e|pr[eé]pa|master|universit[eé]|hard|difficult)\b/i.test(lower)) {
+            res.difficulty = 'advanced';
+        }
+        // intermediate / intermédiaire / moyen / moyen+ / collège
+        else if (/\b(moyen|interm[eé]diaire|normal|standard|coll[eé]ge|intermediate|medium)\b/i.test(lower)) {
+            res.difficulty = 'intermediate';
+        }
+
+        // 3. Détection du format (QCM unique, réponse écrite, mixte)
+        if (/\b(r[eé]ponse[s]?\s+[eé]crite[s]?|ouvert[es]?|dissert|r[eé]daction|texte|written)\b/i.test(lower)) {
+            res.type = 'written';
+        } else if (/\b(qcm\s+unique|choix\s+unique|qcm|choix\s+multiple|mcq)\b/i.test(lower)) {
+            res.type = 'mcq';
+        } else if (/\b(mixte|vari[eé]|m[eé]lang[eé]|mixed)\b/i.test(lower)) {
+            res.type = 'mixed';
+        }
+
+        // 4. Détection des pièges
+        if (/\b(avec\s+pi[eè]ge[s]?|pi[eè]ge[s]?|trompeur|pi[eé]g[eé]|tricky|traps?)\b/i.test(lower)) {
+            res.traps = true;
+        } else if (/\b(sans\s+pi[eè]ge[s]?|pas\s+de\s+pi[eè]ge[s]?|no\s+traps?)\b/i.test(lower)) {
+            res.traps = false;
+        }
+
+        // 5. Détection des explications
+        if (/\b(avec\s+explication[s]?|explication[s]?|justifi[eé]|justification[s]?|corrige[s]?|d[eé]tail[s]?|pedagogique|explanations?)\b/i.test(lower)) {
+            res.explain = true;
+        } else if (/\b(sans\s+explication[s]?|pas\s+d[' ]explication[s]?|no\s+explanations?)\b/i.test(lower)) {
+            res.explain = false;
+        }
+
+        return res;
+    },
+
     switchToForm: function (val) {
         this._currentPrompt = val || '';
+        
+        // Auto-analyse intelligente du prompt par l'IA pour pré-remplir les réglages
+        const parsed = this.parsePromptParams(this._currentPrompt);
+        if (parsed.count !== undefined) this._formCount = parsed.count;
+        if (parsed.difficulty !== undefined) this._formDifficulty = parsed.difficulty;
+        if (parsed.type !== undefined) this._formType = parsed.type;
+        if (parsed.traps !== undefined) this._formTraps = parsed.traps;
+        if (parsed.explain !== undefined) this._formExplain = parsed.explain;
+
         this.mode = 'form';
         if (typeof render === 'function') render();
     },
@@ -882,17 +945,17 @@ window.KwizyAIEngine = {
                     <div class="aif-card">
                         <div class="aif-label"><i class="fas fa-layer-group" style="color:#7c3aed;"></i> ${this.t('difficulty')}</div>
                         <select id="kwizy-ai-difficulty" class="aif-select">
-                            <option value="${this.t('difficultyBeginner')}">🟢 ${this.t('difficultyBeginner')}</option>
-                            <option value="${this.t('difficultyIntermediate')}" selected>🟡 ${this.t('difficultyIntermediate')}</option>
-                            <option value="${this.t('difficultyAdvanced')}">🔴 ${this.t('difficultyAdvanced')}</option>
+                            <option value="${this.t('difficultyBeginner')}" ${this._formDifficulty === 'beginner' ? 'selected' : ''}>🟢 ${this.t('difficultyBeginner')}</option>
+                            <option value="${this.t('difficultyIntermediate')}" ${(!this._formDifficulty || this._formDifficulty === 'intermediate') ? 'selected' : ''}>🟡 ${this.t('difficultyIntermediate')}</option>
+                            <option value="${this.t('difficultyAdvanced')}" ${this._formDifficulty === 'advanced' ? 'selected' : ''}>🔴 ${this.t('difficultyAdvanced')}</option>
                         </select>
                     </div>
                     <div class="aif-card">
                         <div class="aif-label"><i class="fas fa-list-check" style="color:#4f46e5;"></i> ${this.t('format')}</div>
                         <select id="kwizy-ai-type" class="aif-select">
-                            <option value="${this.t('mixed')}" selected>${this.t('mixed')}</option>
-                            <option value="${this.t('singleMcq')}">${this.t('singleMcq')}</option>
-                            <option value="${this.t('writtenAnswer')}">${this.t('writtenAnswer')}</option>
+                            <option value="${this.t('mixed')}" ${(!this._formType || this._formType === 'mixed') ? 'selected' : ''}>${this.t('mixed')}</option>
+                            <option value="${this.t('singleMcq')}" ${this._formType === 'mcq' ? 'selected' : ''}>${this.t('singleMcq')}</option>
+                            <option value="${this.t('writtenAnswer')}" ${this._formType === 'written' ? 'selected' : ''}>${this.t('writtenAnswer')}</option>
                         </select>
                     </div>
                 </div>
@@ -902,7 +965,7 @@ window.KwizyAIEngine = {
                     <div class="aif-label" style="justify-content:center;"><i class="fas fa-hashtag" style="color:#4f46e5;"></i> ${this.t('numberOfQuestions')}</div>
                     <div class="aif-count-wrap">
                         <button class="aif-count-btn" onclick="KwizyAIEngine._adjustCount(-1)">−</button>
-                        <input type="number" id="kwizy-ai-count" value="5" min="1" max="25">
+                        <input type="number" id="kwizy-ai-count" value="${this._formCount || 5}" min="1" max="25">
                         <button class="aif-count-btn" onclick="KwizyAIEngine._adjustCount(1)">+</button>
                     </div>
                 </div>
@@ -924,7 +987,9 @@ window.KwizyAIEngine = {
                             <i class="fas fa-plug-circle-check"></i> Tester
                         </button>
                     </div>
-                    <div id="kwizy-engine-test-status" style="margin-top:6px; font-size:0.75rem; min-height:16px;"></div>
+                    <div id="kwizy-engine-test-status" style="margin-top:6px; font-size:0.75rem; min-height:16px;">
+                        ${localStorage.getItem('kwizy-mistral-key') ? '<span style="color:#10b981;font-weight:600;"><i class="fas fa-circle-check"></i> Clé configurée ! Cliquez sur Tester pour vérifier la connexion.</span>' : '<span style="color:#a1a1aa;">Entrez votre clé API Mistral pour générer vos quiz.</span>'}
+                    </div>
                 </div>
 
                 <!-- Options avancées -->
@@ -936,7 +1001,7 @@ window.KwizyAIEngine = {
                             <div class="aif-toggle-desc">${this.t('trickDesc')}</div>
                         </div>
                         <label class="aif-switch">
-                            <input type="checkbox" id="kwizy-ai-traps">
+                            <input type="checkbox" id="kwizy-ai-traps" ${this._formTraps ? 'checked' : ''}>
                             <span class="aif-switch-track"></span>
                         </label>
                     </div>
@@ -946,7 +1011,7 @@ window.KwizyAIEngine = {
                             <div class="aif-toggle-desc">${this.t('detailedDesc')}</div>
                         </div>
                         <label class="aif-switch">
-                            <input type="checkbox" id="kwizy-ai-explain">
+                            <input type="checkbox" id="kwizy-ai-explain" ${this._formExplain ? 'checked' : ''}>
                             <span class="aif-switch-track"></span>
                         </label>
                     </div>
@@ -1169,38 +1234,102 @@ window.KwizyAIEngine = {
         const explain = document.getElementById('kwizy-ai-explain')?.checked;
 
         if (!prompt) { this.showError(this.t('pleaseDescribeSubject')); return; }
+
+        const apiKey = this._pickMistralKey();
+        if (!apiKey) {
+            this.showError("Aucune clé API Mistral configurée. Veuillez renseigner et tester votre clé API Mistral ci-dessus.");
+            const keyInput = document.getElementById('kwizy-engine-mistral-key');
+            if (keyInput) keyInput.focus();
+            return;
+        }
+
         this._setLoading(true);
+        const errBanner = document.getElementById('ai-error-banner');
+        if (errBanner) errBanner.classList.add('hidden');
 
         try {
             const isFr = this.getLang() === 'fr';
-            let finalPrompt = isFr
-                ? `Génère exactement ${count} questions sur : "${prompt}". Niveau : ${difficulty}. Format : ${type}.`
-                : `Generate exactly ${count} questions about: "${prompt}". Level: ${difficulty}. Format: ${type}.`;
-            if (traps) finalPrompt += isFr ? ` Inclure des pièges.` : ` Include traps.`;
-            if (explain) finalPrompt += isFr ? ` Ajouter des explications.` : ` Add explanations.`;
-
+            let contextDocs = '';
             if (this._attachedFiles && this._attachedFiles.length > 0) {
-                finalPrompt += isFr ? `\n\nDocuments joints pour contexte :\n` : `\n\nAttached documents for context:\n`;
-                this._attachedFiles.forEach(f => {
-                    finalPrompt += isFr
-                        ? `\n--- Document (${f.name}) ---\n${f.text.substring(0, 5000)}\n--- Fin du document ---\n`
-                        : `\n--- Document (${f.name}) ---\n${f.text.substring(0, 5000)}\n--- End of document ---\n`;
-                });
+                contextDocs = this._attachedFiles.map(f => `--- Document (${f.name}) ---\n${f.text.substring(0, 5000)}`).join('\n\n');
             }
 
-            const response = await fetch(this.endpoint, {
+            const systemPrompt = `Tu es un expert pédagogique Kwizy. Tu dois générer un quiz d'évaluation au format JSON STRICT.
+Règles impératives :
+1. Génère EXACTEMENT ${count} questions.
+2. Chaque question a un énoncé clair, 4 options de réponse (avec au moins 1 correcte identifiée par isCorrect: true, et les autres isCorrect: false).
+3. Tu dois répondre UNIQUEMENT avec un objet JSON sans aucun formatage markdown ou texte autour.
+Structure JSON attendue :
+{
+  "title": "Titre du Quiz",
+  "description": "Courte description pédagogique",
+  "questions": [
+    {
+      "text": "Énoncé de la question",
+      "options": [
+        { "text": "Option A", "isCorrect": false },
+        { "text": "Option B", "isCorrect": true },
+        { "text": "Option C", "isCorrect": false },
+        { "text": "Option D", "isCorrect": false }
+      ],
+      "explanation": "Explication pédagogique de la réponse correcte."
+    }
+  ]
+}`;
+
+            let userPrompt = `Génère un quiz sur le sujet suivant : "${prompt}".
+- Nombre de questions : ${count}
+- Niveau de difficulté : ${difficulty}
+- Format demandé : ${type}
+${traps ? '- Inclus des questions pièges ou des distracteurs subtils.' : ''}
+${explain ? '- Inclus des explications pédagogiques détaillées pour chaque question.' : ''}
+${contextDocs ? `\nDocuments sources de référence :\n${contextDocs}` : ''}`;
+
+            const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: finalPrompt })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'mistral-small-latest',
+                    temperature: 0.4,
+                    response_format: { type: 'json_object' },
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: userPrompt }
+                    ]
+                })
             });
 
-            const data = await response.json();
-            if (!response.ok || !data.success) throw new Error(data.error || this.t('apiError'));
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.message || `Erreur Mistral API (${response.status})`);
+            }
 
-            this._lastGenerated = { data: data.data, prompt };
-            this._showPreview(data.data);
+            const completion = await response.json();
+            const rawContent = completion.choices?.[0]?.message?.content;
+            if (!rawContent) throw new Error("Réponse vide reçue de l'IA.");
+
+            let parsedData;
+            try {
+                parsedData = JSON.parse(rawContent);
+            } catch (jsonErr) {
+                // Nettoyage markdown éventuel
+                const clean = rawContent.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+                parsedData = JSON.parse(clean);
+            }
+
+            if (!parsedData.questions || !Array.isArray(parsedData.questions) || parsedData.questions.length === 0) {
+                throw new Error("L'IA n'a pas retourné de liste de questions valide.");
+            }
+
+            this._lastGenerated = { data: parsedData, prompt };
+            this._showPreview(parsedData);
         } catch (e) {
-            this.showError(e.message);
+            console.error('Kwizy AI generation error:', e);
+            this.showError(e.message || this.t('apiError'));
         } finally {
             this._setLoading(false);
         }
