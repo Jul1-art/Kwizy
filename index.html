@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="fr" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kwizy</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="assets/icon-192.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="assets/kwizy-loader.js?v=2"></script>
+
+    <style>
+        :root {
+            --primary: #1C1C1C;
+            --secondary: #0070FF;
+            --surface: #f8f9fa;
+            --white: #ffffff;
+            --bg: var(--surface);
+            --text: var(--primary);
+            --border: rgba(0, 0, 0, 0.06);
+            --card-bg: #ffffff;
+        }
+
+        .dark {
+            --primary: #ffffff;
+            --secondary: #0070FF;
+            --surface: #0a0a0a;
+            --bg: var(--surface);
+            --text: var(--primary);
+            --border: rgba(255, 255, 255, 0.08);
+            --card-bg: #111111;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.5s ease, color 0.5s ease;
+            overflow: hidden;
+        }
+
+        /* ---- TOPBAR ---- */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            z-index: 1000;
+        }
+
+        .topbar-logo {
+            grid-column: 2;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--text);
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .topbar-right {
+            grid-column: 3;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .theme-toggle-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+        }
+
+        .theme-toggle-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .theme-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ---- PORTAL GRID ---- */
+        .portal-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
+            width: 100%;
+            max-width: 560px;
+            padding: 2rem;
+            margin: 0;
+        }
+
+        .portal-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1.8rem 1.5rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            text-decoration: none;
+            color: var(--text);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            cursor: pointer;
+            min-height: 140px;
+        }
+
+        .portal-btn:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .portal-btn:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .portal-btn:nth-child(3) {
+            animation-delay: 0.3s;
+            grid-column: span 2;
+            min-height: 110px;
+            padding: 1.5rem;
+        }
+
+        /* Réservé aux appareils avec souris pour éviter les bugs tactiles "collants" */
+        @media (hover: hover) {
+            .portal-btn:hover {
+                transform: translateY(-5px);
+                border-color: var(--secondary);
+                background: var(--white);
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+            }
+
+            .dark .portal-btn:hover {
+                background: #151515;
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        .portal-btn:active {
+            transform: scale(0.96) !important;
+            background: var(--white);
+        }
+
+        .dark .portal-btn:active {
+            background: #181818;
+        }
+
+        .btn-subtitle {
+            font-size: clamp(0.55rem, 1.2vw, 0.65rem);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            color: #888;
+            margin-bottom: clamp(0.5rem, 1.5vw, 0.75rem);
+        }
+
+        .btn-title {
+            font-family: 'Inter', sans-serif;
+            font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        footer {
+            position: fixed;
+            bottom: 2rem;
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            opacity: 0.2;
+        }
+
+        /* ---- RESPONSIVE TABLETTE (iPad, etc.) ---- */
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .portal-container {
+                max-width: 720px;
+                /* On élargit pour exploiter l'écran */
+                gap: 1.5rem;
+                padding: 2.5rem;
+            }
+
+            .portal-btn {
+                min-height: 180px;
+                /* Plus grand pour le tactile */
+                padding: 2rem;
+            }
+
+            .portal-btn:nth-child(3) {
+                min-height: 130px;
+                padding: 1.8rem;
+            }
+
+            .btn-subtitle {
+                font-size: 0.75rem;
+                /* Écrase le clamp() pour plus de lisibilité */
+                margin-bottom: 1rem;
+            }
+
+            .btn-title {
+                font-size: 1.6rem;
+                /* Écrase le clamp() pour des titres assumés */
+            }
+
+            .topbar {
+                padding: 2rem 3rem;
+                /* Espace respirable en haut */
+            }
+
+            .topbar-logo {
+                font-size: 1rem;
+            }
+
+            /* Dézoom à 80% sur tablette */
+            body {
+                zoom: 0.80;
+            }
+        }
+
+        /* ---- RESPONSIVE MOBILE ---- */
+        @media (max-width: 640px) {
+            .topbar {
+                padding: 1.5rem;
+            }
+
+            .topbar-logo {
+                font-size: 0.75rem;
+                letter-spacing: 0.15em;
+            }
+
+            .portal-container {
+                grid-template-columns: 1fr;
+                gap: 0.85rem;
+                padding: 1.5rem;
+                margin-top: 3rem;
+            }
+
+            .portal-btn {
+                aspect-ratio: auto;
+                min-height: 140px;
+                padding: 1.5rem;
+                border-radius: 20px;
+            }
+
+            .portal-btn:nth-child(3) {
+                grid-column: span 1;
+                aspect-ratio: auto;
+                min-height: 110px;
+            }
+
+            .btn-title {
+                font-size: 1.35rem;
+            }
+
+            .portal-btn:nth-child(3) .btn-title {
+                font-size: 1.15rem;
+            }
+
+            footer {
+                bottom: 1.5rem;
+                font-size: 0.5rem;
+                width: 100%;
+                text-align: center;
+                left: 0;
+            }
+        }
+
+        /* ---- GLOW SPOTS ---- */
+        .absolute-glow {
+            position: fixed;
+            width: 55vw;
+            height: 55vw;
+            max-width: 650px;
+            max-height: 650px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(80px);
+            opacity: 0.65;
+            transition: opacity 0.5s ease;
+        }
+
+        .dark .absolute-glow {
+            opacity: 0.70;
+        }
+
+        .glow-top-left {
+            top: -15vw;
+            left: -15vw;
+            background: radial-gradient(circle, rgba(0, 70, 255, 0.95) 0%, rgba(0, 120, 255, 0.5) 35%, rgba(0, 70, 255, 0) 70%);
+        }
+
+        .glow-bottom-right {
+            bottom: -15vw;
+            right: -15vw;
+            background: radial-gradient(circle, rgba(109, 40, 217, 0.95) 0%, rgba(139, 92, 246, 0.5) 35%, rgba(109, 40, 217, 0) 70%);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Glowing background accents -->
+    <div class="absolute-glow glow-top-left"></div>
+    <div class="absolute-glow glow-bottom-right"></div>
+
+    <kwizy-loader></kwizy-loader>
+
+    <header class="topbar">
+        <div class="topbar-left"></div>
+        <a href="index.html" class="topbar-logo">Kwizy</a>
+        <div class="topbar-right">
+            <button class="theme-toggle-btn" id="theme-toggle">
+                <i id="theme-icon" class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="portal-container">
+        <!-- ÉLÈVES -->
+        <a href="javascript:void(0)" onclick="handlePortalClick('eleves')" class="portal-btn" id="btn-eleves">
+            <span class="btn-subtitle">Interface Étudiant</span>
+            <span class="btn-title">Élèves</span>
+        </a>
+
+        <!-- PROFESSEURS -->
+        <a href="javascript:void(0)" onclick="handlePortalClick('professeurs')" class="portal-btn" id="btn-professeurs">
+            <span class="btn-subtitle">Espace Administration</span>
+            <span class="btn-title">Professeurs</span>
+        </a>
+
+        <a href="landing/landing.html" class="portal-btn">
+            <span class="btn-title">Histoire du projet</span>
+        </a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            // Theme Management
+            const applyTheme = (t) => {
+                if (t === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    document.getElementById('theme-icon').className = 'fas fa-sun';
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    document.getElementById('theme-icon').className = 'fas fa-moon';
+                }
+                localStorage.setItem('kwizy-theme', t);
+            };
+            applyTheme(localStorage.getItem('kwizy-theme') || 'light');
+            document.getElementById('theme-toggle').onclick = () => {
+                applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+            };
+
+            // ---- MAGNETIC BUTTONS (Desktop Only) ----
+            const buttons = document.querySelectorAll('.portal-btn');
+            const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+            if (!isTouch) {
+                buttons.forEach(btn => {
+                    btn.addEventListener('mousemove', (e) => {
+                        const rect = btn.getBoundingClientRect();
+                        const x = e.clientX - rect.left - rect.width / 2;
+                        const y = e.clientY - rect.top - rect.height / 2;
+
+                        btn.style.transform = `translate3d(${x * 0.2}px, ${y * 0.3}px, 0) scale(1.02)`;
+                    });
+
+                    btn.addEventListener('mouseleave', () => {
+                        btn.style.transform = '';
+                    });
+                });
+            }
+
+            // ---- PARALLAX GYROSCOPE (Mobile / Tablet Only) ----
+            let gyro = { x: 0, y: 0 };
+            let targetGyro = { x: 0, y: 0 };
+            const container = document.querySelector('.portal-container');
+
+            function handleOrientation(e) {
+                const y = e.beta;
+                const x = e.gamma;
+                targetGyro.y = Math.max(-15, Math.min(15, (y - 45) / 2));
+                targetGyro.x = Math.max(-15, Math.min(15, x / 2));
+            }
+
+            if (isTouch) {
+                // Requiert un clic de l'utilisateur sur iOS pour autoriser l'accès au gyroscope
+                document.body.addEventListener('click', function () {
+                    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                        DeviceOrientationEvent.requestPermission().then(res => {
+                            if (res == 'granted') window.addEventListener('deviceorientation', handleOrientation);
+                        }).catch(console.error);
+                    } else {
+                        window.addEventListener('deviceorientation', handleOrientation);
+                    }
+                }, { once: true });
+            }
+
+            function updateParallax() {
+                if (isTouch) {
+                    gyro.x += (targetGyro.x - gyro.x) * 0.1;
+                    gyro.y += (targetGyro.y - gyro.y) * 0.1;
+                    if (container) container.style.transform = `translate3d(${gyro.x}px, ${gyro.y}px, 0)`;
+                }
+                requestAnimationFrame(updateParallax);
+            }
+            updateParallax();
+        });
+
+        // ---- SHARED ELEMENT TRANSITION (Remplissage) ----
+        function handlePortalClick(type) {
+            const btn = document.getElementById('btn-' + type);
+            if (!btn) return;
+
+            const rect = btn.getBoundingClientRect();
+
+            // Créer l'élément d'expansion
+            const expander = document.createElement('div');
+            expander.style.position = 'fixed';
+            expander.style.top = rect.top + 'px';
+            expander.style.left = rect.left + 'px';
+            expander.style.width = rect.width + 'px';
+            expander.style.height = rect.height + 'px';
+
+            // Utiliser la couleur du bouton pour l'expansion
+            const cardBg = getComputedStyle(document.documentElement).getPropertyValue('--card-bg').trim();
+            expander.style.backgroundColor = cardBg;
+
+            expander.style.borderRadius = '20px';
+            expander.style.zIndex = '9999';
+            expander.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+            expander.style.border = '1px solid var(--secondary)';
+            document.body.appendChild(expander);
+
+            // Forcer le reflow
+            expander.offsetHeight;
+
+            // Animer l'expansion
+            expander.style.top = '0';
+            expander.style.left = '0';
+            expander.style.width = '100vw';
+            expander.style.height = '100vh';
+            expander.style.borderRadius = '0';
+
+            // Redirection après l'animation
+            setTimeout(() => {
+                if (type === 'professeurs') {
+                    const session = localStorage.getItem('kwizySession');
+                    if (!session || session === 'null' || session === 'undefined') {
+                        localStorage.removeItem('kwizySession');
+                        window.location.href = 'professeurs/inscription.html';
+                        return;
+                    }
+                    window.location.href = 'professeurs/professeurs.html';
+                } else {
+                    window.location.href = 'eleves/classroom.html';
+                }
+            }, 550);
+        }
+
+        // ---- CLEANUP LEGACY SERVICE WORKERS & CACHES ----
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (let registration of registrations) {
+                    registration.unregister().then(() => {
+                        console.log('Legacy Service Worker unregistered successfully.');
+                    });
+                }
+            });
+        }
+        if ('caches' in window) {
+            caches.keys().then(keys => {
+                keys.forEach(key => {
+                    caches.delete(key).then(() => {
+                        console.log('Legacy cache cleared:', key);
+                    });
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>
