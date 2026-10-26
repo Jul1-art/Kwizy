@@ -907,6 +907,26 @@ window.KwizyAIEngine = {
                     </div>
                 </div>
 
+                <!-- Clé API Mistral & Test -->
+                <div class="aif-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="aif-label" style="margin:0;"><i class="fas fa-key" style="color:#7c3aed;"></i> Clé API Mistral AI</div>
+                        <a href="https://console.mistral.ai/api-keys/" target="_blank" rel="noopener" style="font-size:0.75rem; color:#4f46e5; text-decoration:none; font-weight:600;">Obtenir une clé ↗</a>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+                        <input type="password" id="kwizy-engine-mistral-key" placeholder="Ex: your_mistral_api_key_here..."
+                               value="${localStorage.getItem('kwizy-mistral-key') || ''}"
+                               oninput="localStorage.setItem('kwizy-mistral-key', this.value.trim());"
+                               style="flex:1; padding:10px 14px; border-radius:12px; border:1px solid rgba(0,0,0,0.1); font-family:monospace; font-size:0.85rem; outline:none; background:transparent;"
+                               class="border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white">
+                        <button type="button" id="kwizy-engine-test-btn" onclick="window.KwizyAIEngine.testMistralKey()"
+                                style="padding:10px 14px; border-radius:12px; border:1px solid rgba(79,70,229,0.3); background:rgba(79,70,229,0.08); color:#4f46e5; font-size:0.8rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; white-space:nowrap;">
+                            <i class="fas fa-plug-circle-check"></i> Tester
+                        </button>
+                    </div>
+                    <div id="kwizy-engine-test-status" style="margin-top:6px; font-size:0.75rem; min-height:16px;"></div>
+                </div>
+
                 <!-- Options avancées -->
                 <div class="aif-card">
                     <div class="aif-label"><i class="fas fa-sliders" style="color:#7c3aed;"></i> ${this.t('advancedOptions')}</div>
@@ -1076,6 +1096,60 @@ window.KwizyAIEngine = {
         const b = document.getElementById('ai-error-banner');
         const t = document.getElementById('ai-error-text');
         if (b && t) { t.textContent = msg; b.classList.remove('hidden'); }
+    },
+
+    testMistralKey: async function () {
+        const input = document.getElementById('kwizy-engine-mistral-key');
+        const key = (input ? input.value : localStorage.getItem('kwizy-mistral-key') || '').trim();
+        const btn = document.getElementById('kwizy-engine-test-btn');
+        const statusEl = document.getElementById('kwizy-engine-test-status');
+
+        if (!key) {
+            if (statusEl) {
+                statusEl.innerHTML = '<span style="color:#f59e0b;font-weight:600;"><i class="fas fa-circle-exclamation"></i> Saisissez une clé API d\'abord.</span>';
+            }
+            return;
+        }
+
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Test…';
+        }
+        if (statusEl) {
+            statusEl.innerHTML = '<span style="color:#a1a1aa;"><i class="fas fa-spinner fa-spin"></i> Test auprès de Mistral AI…</span>';
+        }
+
+        try {
+            const res = await fetch('https://api.mistral.ai/v1/models', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${key}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (res.ok) {
+                localStorage.setItem('kwizy-mistral-key', key);
+                if (statusEl) {
+                    statusEl.innerHTML = '<span style="color:#10b981;font-weight:600;"><i class="fas fa-circle-check"></i> Clé valide et enregistrée !</span>';
+                }
+            } else {
+                const err = await res.json().catch(() => ({}));
+                const msg = err.message || (res.status === 401 ? 'Clé invalide (401)' : `Erreur HTTP ${res.status}`);
+                if (statusEl) {
+                    statusEl.innerHTML = `<span style="color:#ef4444;font-weight:600;"><i class="fas fa-circle-xmark"></i> Échec : ${msg}</span>`;
+                }
+            }
+        } catch (e) {
+            if (statusEl) {
+                statusEl.innerHTML = `<span style="color:#ef4444;font-weight:600;"><i class="fas fa-circle-xmark"></i> Erreur réseau : ${e.message}</span>`;
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-plug-circle-check"></i> Tester';
+            }
+        }
     },
 
     _setLoading: function (on) {

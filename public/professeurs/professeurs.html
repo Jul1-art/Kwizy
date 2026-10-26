@@ -4661,6 +4661,65 @@
         }
       },
 
+      testMistralKey: async () => {
+        const input = document.getElementById('mistral-key-input');
+        const key = (input ? input.value : localStorage.getItem('kwizy-mistral-key') || '').trim();
+        const btn = document.getElementById('btn-test-mistral');
+        const statusEl = document.getElementById('mistral-test-status');
+
+        if (!key) {
+          if (statusEl) {
+            statusEl.innerHTML = '<span class="text-amber-500 font-semibold flex items-center gap-1.5"><i class="fas fa-circle-exclamation"></i> Veuillez saisir une clé d\'abord.</span>';
+          }
+          actions.showNotification("Veuillez saisir une clé API Mistral.", "warning");
+          return;
+        }
+
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Test en cours…';
+        }
+        if (statusEl) {
+          statusEl.innerHTML = '<span class="text-zinc-400 flex items-center gap-1.5"><i class="fas fa-spinner fa-spin"></i> Vérification de la clé auprès de Mistral AI…</span>';
+        }
+
+        try {
+          const res = await fetch('https://api.mistral.ai/v1/models', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${key}`,
+              'Accept': 'application/json'
+            }
+          });
+
+          if (res.ok) {
+            localStorage.setItem('kwizy-mistral-key', key);
+            if (statusEl) {
+              statusEl.innerHTML = '<span class="text-emerald-500 font-semibold flex items-center gap-1.5"><i class="fas fa-circle-check"></i> Clé valide et fonctionnelle ! Sauvegardée.</span>';
+            }
+            actions.showNotification("Clé API Mistral valide et connectée !", "success");
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            const msg = errData.message || (res.status === 401 ? "Clé invalide ou non autorisée (401)" : `Erreur HTTP ${res.status}`);
+            if (statusEl) {
+              statusEl.innerHTML = `<span class="text-rose-500 font-semibold flex items-center gap-1.5"><i class="fas fa-circle-xmark"></i> Échec : ${msg}</span>`;
+            }
+            actions.showNotification(`Clé invalide : ${msg}`, "error");
+          }
+        } catch (e) {
+          const msg = e.message || "Erreur de connexion";
+          if (statusEl) {
+            statusEl.innerHTML = `<span class="text-rose-500 font-semibold flex items-center gap-1.5"><i class="fas fa-circle-xmark"></i> Erreur réseau : ${msg}</span>`;
+          }
+          actions.showNotification(`Erreur de connexion : ${msg}`, "error");
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plug-circle-check"></i> Tester la clé';
+          }
+        }
+      },
+
       deleteAccount: async () => {
         const pwd = document.getElementById('delete-password').value;
         if (!pwd) return actions.showNotification("Mot de passe requis", "error");
@@ -7168,11 +7227,17 @@ RÈGLES :
                     </label>
                     <a href="https://console.mistral.ai/api-keys/" target="_blank" rel="noopener" class="text-[10px] text-secondary hover:underline font-bold">Obtenir une clé ↗</a>
                   </div>
-                  <div class="relative">
-                    <input name="mistralApiKey" id="mistral-key-input" type="password" autocomplete="off" class="w-full bg-zinc-50 dark:bg-[#1C1C1C] border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white rounded-xl p-3 text-sm focus:border-secondary outline-none transition-all font-mono" placeholder="Ex: your_mistral_api_key_here..." value="${localStorage.getItem('kwizy-mistral-key') || ''}">
-                    <button type="button" onclick="actions.togglePassword('mistral-key-input')" class="absolute right-3 top-[10px] p-2 text-zinc-400 hover:text-black dark:hover:text-white"><i data-lucide="eye" size="16"></i></button>
+                  <div class="relative flex items-center gap-2">
+                    <div class="relative flex-1">
+                      <input name="mistralApiKey" id="mistral-key-input" type="password" autocomplete="off" class="w-full bg-zinc-50 dark:bg-[#1C1C1C] border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white rounded-xl p-3 pr-10 text-sm focus:border-secondary outline-none transition-all font-mono" placeholder="Ex: your_mistral_api_key_here..." value="${localStorage.getItem('kwizy-mistral-key') || ''}">
+                      <button type="button" onclick="actions.togglePassword('mistral-key-input')" class="absolute right-3 top-[10px] p-2 text-zinc-400 hover:text-black dark:hover:text-white"><i data-lucide="eye" size="16"></i></button>
+                    </div>
+                    <button type="button" id="btn-test-mistral" onclick="actions.testMistralKey()" class="px-3.5 py-3 rounded-xl bg-secondary/10 hover:bg-secondary/20 text-secondary border border-secondary/30 text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer">
+                      <i class="fas fa-plug-circle-check"></i> Tester la clé
+                    </button>
                   </div>
-                  <p class="text-[10px] text-zinc-400 mt-1">${t.mistralApiKeyHint || 'Stockée localement dans votre navigateur pour vos requêtes IA.'}</p>
+                  <div id="mistral-test-status" class="mt-2 text-xs min-h-[18px]"></div>
+                  <p class="text-[10px] text-zinc-400 mt-0.5">${t.mistralApiKeyHint || 'Stockée localement dans votre navigateur pour vos requêtes IA.'}</p>
                 </div>
                 <div class="pt-5 border-t border-zinc-100 dark:border-white/5 space-y-4">
                   <div class="relative">
