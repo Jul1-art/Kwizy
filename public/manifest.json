@@ -1,0 +1,23 @@
+{
+  "name": "Kwizy — Smart Assessment",
+  "short_name": "Kwizy",
+  "description": "Plateforme d'évaluation intelligente et sécurisée pour enseignants et élèves.",
+  "start_url": "/Jul-IA/index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0070FF",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "orientation": "portrait"
+}

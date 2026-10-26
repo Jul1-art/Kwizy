@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Environment and sensitive configuration
+.env
+.env.*
+!.env.example
+config/db.local.php
+
+# Logs
+logs/*.log
+*.log
+
+# Uploads & Temporary files
+.uploads/*
+!.uploads/.gitkeep
+scratch/
+scratch_script_*.js
+temp_*.js
+
+# IDE & Editor files
+.vscode/
+.cursor/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+.DS_Store
+Thumbs.db

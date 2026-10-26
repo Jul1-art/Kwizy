@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kwizy — Créer un compte</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="../manifest.json">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --text: #0a0a0a;
+            --text-dim: #888888;
+            --border: #e5e5e5;
+            --card-bg: #fafafa;
+            --input-bg: #f2f2f2;
+            --btn-bg: #0a0a0a;
+            --btn-text: #ffffff;
+            --logo-color: #0a0a0a;
+            --secondary: #0070FF;
+        }
+        [data-theme="dark"] {
+            --bg: #0c0c0c;
+            --text: #f0f0f0;
+            --text-dim: #666666;
+            --border: #222222;
+            --card-bg: #141414;
+            --input-bg: #1c1c1c;
+            --btn-bg: #f0f0f0;
+            --btn-text: #0c0c0c;
+            --logo-color: #f0f0f0;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s, color 0.3s;
+            overflow: hidden;
+        }
+
+        /* ---- TOPBAR ---- */
+        .topbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            z-index: 100;
+        }
+        .topbar-logo {
+            grid-column: 2;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--logo-color);
+            text-align: center;
+            text-decoration: none;
+        }
+        .topbar-right {
+            grid-column: 3;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        .theme-toggle-btn {
+            width: 38px; height: 38px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+            transition: all 0.25s ease;
+        }
+        .theme-toggle-btn:hover { background: rgba(0, 0, 0, 0.05); }
+        [data-theme="dark"] .theme-toggle-btn:hover { background: rgba(255, 255, 255, 0.1); }
+
+        /* ---- PROGRESS ---- */
+        .progress-track {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: var(--border);
+            z-index: 200;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--text);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ---- SCREENS ---- */
+        .screen {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6rem 1.5rem 3rem;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateY(18px);
+        }
+        .screen.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: translateY(0);
+        }
+        .screen.exit {
+            opacity: 0;
+            transform: translateY(-18px);
+        }
+
+        /* ---- INTRO ---- */
+        .intro-tag {
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 1.8rem;
+        }
+        .intro-title {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            line-height: 1.08;
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        .intro-title .line { display: block; overflow: hidden; }
+        .intro-title .line span {
+            display: block;
+            transform: translateY(105%);
+            transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .intro-title .line span.visible { transform: translateY(0); }
+
+        /* ---- CARD (question wrapper) ---- */
+        .card {
+            background: var(--card-bg);
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem 2.5rem;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .step-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 1.25rem;
+        }
+        .step-heading {
+            font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+        .step-sub {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+            margin-bottom: 1.75rem;
+        }
+
+        /* Date inputs */
+        .date-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .date-sep {
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: var(--text-dim);
+        }
+        .date-input {
+            background: var(--input-bg);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            text-align: center;
+            padding: 0.75rem 0.4rem;
+            outline: none;
+            transition: border-color 0.2s;
+            -moz-appearance: textfield;
+        }
+        .date-input::-webkit-outer-spin-button,
+        .date-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+        .date-input:focus { border-color: var(--text); }
+        .date-input.dd { width: 76px; }
+        .date-input.mm { width: 76px; }
+        .date-input.yyyy { width: 108px; }
+
+        /* Text input */
+        .text-input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 500;
+            padding: 0.9rem 1.1rem;
+            outline: none;
+            text-align: center;
+            transition: border-color 0.2s;
+            margin-bottom: 0.25rem;
+        }
+        .text-input:focus { border-color: var(--text); }
+        .text-input::placeholder { color: var(--text-dim); }
+
+        /* Password container */
+        .pass-group {
+            position: relative;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        .btn-toggle-pass {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+        }
+        .btn-toggle-pass:hover { color: var(--text); }
+
+        /* Error */
+        .error-msg {
+            display: none;
+            font-size: 0.78rem;
+            color: #e53e3e;
+            margin-top: 0.6rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 600;
+            padding: 0.85rem 2.2rem;
+            border-radius: 100px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 0.01em;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        [data-theme="dark"] .btn-primary:hover {
+            box-shadow: 0 8px 24px rgba(255,255,255,0.07);
+        }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .btn-back {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-back:hover { color: var(--text); }
+
+        .step-nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+            max-width: 500px;
+        }
+        .step-nav-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        /* Interlude */
+        .interlude-heading {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            line-height: 1.1;
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        /* Success */
+        .success-emoji {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ---- TYPING CURSOR ---- */
+        .typing::after {
+            content: '|';
+            animation: blink-cur 0.65s step-end infinite;
+            color: var(--text-dim);
+            font-weight: 300;
+        }
+        @keyframes blink-cur { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="progress-track">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+
+    <div class="topbar">
+        <div class="topbar-left"></div>
+        <a href="../index.html" class="topbar-logo">Kwizy</a>
+        <div class="topbar-right">
+            <button class="theme-toggle-btn" id="theme-toggle">
+                <i id="theme-icon" class="fas fa-moon"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== SCREEN 0 : INTRO ===== -->
+    <div class="screen active" id="screen-0">
+        <div class="intro-title" id="intro-title">
+            <div class="line"><span>Créons votre</span></div>
+            <div class="line"><span>compte.</span></div>
+        </div>
+        <button class="btn-primary" onclick="goTo(1)">Créer un compte</button>
+        <p style="margin-top:1.25rem;font-size:0.78rem;color:var(--text-dim)">Déjà inscrit ? <a href="javascript:void(0)" onclick="goTo(8)" style="color:var(--text);font-weight:600;text-decoration:none">Se connecter</a></p>
+    </div>
+
+    <!-- ===== SCREEN 1 : DATE DE NAISSANCE ===== -->
+    <div class="screen" id="screen-1">
+        <div class="card">
+            <h2 class="step-heading" id="t-1"></h2>
+            <p class="step-sub" id="s-1"></p>
+            <p style="font-size:0.7rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-dim);margin-bottom:1.1rem;" id="s-1b"></p>
+            <div class="date-row">
+                <input class="date-input dd" id="inp-dd" type="number" min="1" max="31" placeholder="JJ">
+                <span class="date-sep">/</span>
+                <input class="date-input mm" id="inp-mm" type="number" min="1" max="12" placeholder="MM">
+                <span class="date-sep">/</span>
+                <input class="date-input yyyy" id="inp-yy" type="number" min="1900" max="9999" placeholder="AAAA">
+            </div>
+            <p class="error-msg" id="err-dob">Vous devez avoir au moins 18 ans pour vous inscrire.</p>
+        </div>
+        <div class="step-nav-row">
+            <button class="btn-back" onclick="goTo(0)">← Retour</button>
+            <button class="btn-primary" onclick="validateDob()">Continuer</button>
+        </div>
+    </div>
+
+    <!-- ===== SCREEN 2 : INTERLUDE ===== -->
+    <div class="screen" id="screen-2">
+        <h2 class="interlude-heading" id="t-2"></h2>
+        <button class="btn-primary" onclick="goTo(3)">Continuer</button>
+    </div>
+
+    <!-- ===== SCREEN 3 : NOM ===== -->
+    <div class="screen" id="screen-3">
+        <div class="card">
+            <h2 class="step-heading" id="t-3"></h2>
+            <p class="step-sub" id="s-3"></p>
+            <input class="text-input" id="inp-name" type="text" placeholder="Votre nom complet" autocomplete="off" spellcheck="false">
+            <p class="error-msg" id="err-name">Merci de renseigner votre nom.</p>
+        </div>
+        <div class="step-nav-row">
+            <button class="btn-back" onclick="goTo(2)">← Retour</button>
+            <button class="btn-primary" onclick="validateName()">Continuer</button>
+        </div>
+    </div>
+
+    <!-- ===== SCREEN 4 : ÉTABLISSEMENT ===== -->
+    <div class="screen" id="screen-4">
+        <div class="card">
+            <h2 class="step-heading" id="t-4"></h2>
+            <p class="step-sub" id="s-4"></p>
+            <input class="text-input" id="inp-school" type="text" placeholder="Nom de l'établissement" autocomplete="off" spellcheck="false">
+            <p class="error-msg" id="err-school">Merci de renseigner votre établissement.</p>
+        </div>
+        <div class="step-nav-row">
+            <button class="btn-back" onclick="goTo(3)">← Retour</button>
+            <button class="btn-primary" onclick="validateSchool()">Continuer</button>
+        </div>
+    </div>
+
+    <!-- ===== SCREEN 5 : EMAIL ===== -->
+    <div class="screen" id="screen-5">
+        <div class="card">
+            <h2 class="step-heading" id="t-5"></h2>
+            <p class="step-sub" id="s-5"></p>
+            <input class="text-input" id="inp-email" type="email" placeholder="vous@etablissement.fr" autocomplete="off" style="text-transform:none">
+            <p class="error-msg" id="err-email">Adresse e-mail invalide.</p>
+        </div>
+        <div class="step-nav-row">
+            <button class="btn-back" onclick="goTo(4)">← Retour</button>
+            <button class="btn-primary" onclick="validateEmail()">Continuer</button>
+        </div>
+    </div>
+
+    <!-- ===== SCREEN 6 : MOT DE PASSE ===== -->
+    <div class="screen" id="screen-6">
+        <div class="card">
+            <h2 class="step-heading" id="t-6"></h2>
+            <p class="step-sub" id="s-6"></p>
+            <div class="pass-group">
+                <input class="text-input" id="inp-password" type="password" placeholder="Mot de passe" autocomplete="off">
+                <button class="btn-toggle-pass" type="button" onclick="togglePassword('inp-password')"><i class="fas fa-eye"></i></button>
+            </div>
+            <div class="pass-group">
+                <input class="text-input" id="inp-password-confirm" type="password" placeholder="Confirmez le mot de passe" autocomplete="off">
+                <button class="btn-toggle-pass" type="button" onclick="togglePassword('inp-password-confirm')"><i class="fas fa-eye"></i></button>
+            </div>
+            <p class="error-msg" id="err-pass">8 caractères minimum requis.</p>
+            <p class="error-msg" id="err-pass-match">Les mots de passe ne correspondent pas.</p>
+        </div>
+        <div class="step-nav-row">
+            <button class="btn-back" onclick="goTo(5)">← Retour</button>
+            <button class="btn-primary" id="btn-submit" onclick="submitForm()">Créer mon compte</button>
+        </div>
+    </div>
+
+    <!-- ===== SCREEN 7 : SUCCÈS ===== -->
+    <div class="screen" id="screen-7">
+        <div class="card" style="padding:3rem 2.5rem">
+            <div class="success-emoji">🎉</div>
+            <h2 class="step-heading">Bienvenue, <span id="welcome-name"></span>&nbsp;!</h2>
+            <p class="step-sub" style="margin-top:0.6rem">Votre espace est prêt. Créez votre premier quiz dès maintenant.</p>
+            <button class="btn-primary" style="margin-top:1rem" onclick="redirectToDashboard()">Accéder au tableau de bord →</button>
+        </div>
+    </div>
+
+    <!-- ===== SCREEN 8 : CONNEXION ===== -->
+    <div class="screen" id="screen-8">
+        <div class="card">
+            <h2 class="step-heading" id="t-8"></h2>
+            <p class="step-sub" id="s-8"></p>
+            <input class="text-input" id="login-email" type="email" placeholder="Email" autocomplete="off" style="text-transform:none">
+            <div class="pass-group">
+                <input class="text-input" id="login-password" type="password" placeholder="Mot de passe" autocomplete="off">
+                <button class="btn-toggle-pass" type="button" onclick="togglePassword('login-password')"><i class="fas fa-eye"></i></button>
+            </div>
+            <p class="error-msg" id="err-login">Identifiants incorrects.</p>
+        </div>
+        <div class="step-nav-row">
+            <button class="btn-back" onclick="goTo(0)">← Retour</button>
+            <button class="btn-primary" id="btn-login" onclick="handleLogin()">Se connecter</button>
+        </div>
+    </div>
+
+    <script>
+        /* THEME */
+        const applyTheme = t => {
+            document.documentElement.setAttribute('data-theme', t);
+            localStorage.setItem('kwizy-theme', t);
+            document.getElementById('theme-icon').className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        };
+        applyTheme(localStorage.getItem('kwizy-theme') || 'light');
+        document.getElementById('theme-toggle').onclick = () => {
+            applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        };
+
+        /* TYPING ENGINE */
+        async function typeInto(el, text, speed = 30) {
+            if (!el) return;
+            el.textContent = '';
+            el.classList.add('typing');
+            for (const ch of text) {
+                el.textContent += ch;
+                await new Promise(r => setTimeout(r, speed));
+            }
+            el.classList.remove('typing');
+        }
+
+        const screenTexts = {
+            1: { heading: 'Quelle est votre date de naissance ?', sub: 'Cela nous aide à vérifier votre compte.', sub2: 'Saisissez votre date de naissance' },
+            2: { heading: 'Dites-nous un peu plus sur vous.' },
+            3: { heading: 'Comment vous appelez-vous ?', sub: 'Votre nom sera affiché sur votre profil.' },
+            4: { heading: 'Dans quel établissement enseignez-vous ?', sub: 'Le nom de votre lycée, collège ou école.' },
+            5: { heading: 'Votre adresse email.', sub: 'Elle servira à vous connecter.' },
+            6: { heading: 'Choisissez un mot de passe.', sub: 'Au moins 8 caractères.' },
+            8: { heading: 'Bon retour parmi nous.', sub: 'Connectez-vous à votre compte.' }
+        };
+
+        async function runTypingForScreen(n) {
+            const texts = screenTexts[n];
+            if (!texts) return;
+            const hEl = document.getElementById(`t-${n}`);
+            const sEl = document.getElementById(`s-${n}`);
+            const s2El = document.getElementById(`s-${n}b`);
+            if (hEl) await typeInto(hEl, texts.heading, 28);
+            if (sEl && texts.sub) await typeInto(sEl, texts.sub, 20);
+            if (s2El && texts.sub2) await typeInto(s2El, texts.sub2, 18);
+        }
+
+        /* PROGRESS */
+        const stepProgress = { 0: 0, 1: 1/6, 2: 2/6, 3: 3/6, 4: 4/6, 5: 5/6, 6: 6/6, 7: 1 };
+        function setProgress(n) {
+            document.getElementById('progress-fill').style.width = ((stepProgress[n] || 0) * 100) + '%';
+        }
+
+        /* NAVIGATION */
+        let currentScreen = 0;
+        function goTo(n) {
+            const prev = document.getElementById(`screen-${currentScreen}`);
+            prev.classList.add('exit');
+            setTimeout(() => {
+                prev.classList.remove('active', 'exit');
+                currentScreen = n;
+                const next = document.getElementById(`screen-${n}`);
+                next.classList.add('active');
+                setProgress(n);
+                const inp = next.querySelector('input');
+                if (inp) setTimeout(() => inp.focus(), 600);
+                if (n === 0) animateIntro();
+                else setTimeout(() => runTypingForScreen(n), 200);
+            }, 430);
+        }
+
+        /* INTRO ANIMATION */
+        function animateIntro() {
+            const spans = document.querySelectorAll('#intro-title .line span');
+            spans.forEach((s, i) => {
+                s.classList.remove('visible');
+                setTimeout(() => s.classList.add('visible'), 60 + i * 110);
+            });
+        }
+        window.addEventListener('DOMContentLoaded', () => setTimeout(animateIntro, 100));
+
+        /* AUTO-ADVANCE DATE INPUTS */
+        document.getElementById('inp-dd').addEventListener('input', function() {
+            if (this.value.length >= 2) document.getElementById('inp-mm').focus();
+        });
+        document.getElementById('inp-mm').addEventListener('input', function() {
+            if (this.value.length >= 2) document.getElementById('inp-yy').focus();
+        });
+
+        /* VALIDATIONS */
+        function validateDob() {
+            const dd = parseInt(document.getElementById('inp-dd').value);
+            const mm = parseInt(document.getElementById('inp-mm').value);
+            const yy = parseInt(document.getElementById('inp-yy').value);
+            const err = document.getElementById('err-dob');
+            if (!dd || !mm || !yy || yy < 1000) { err.style.display = 'block'; return; }
+            const dob = new Date(yy, mm - 1, dd);
+            const now = new Date();
+            const age = now.getFullYear() - dob.getFullYear()
+                - (now < new Date(now.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
+            if (isNaN(age) || age < 18) { err.style.display = 'block'; return; }
+            err.style.display = 'none';
+            goTo(2);
+        }
+
+        function validateName() {
+            const v = document.getElementById('inp-name').value.trim();
+            const err = document.getElementById('err-name');
+            if (!v) { err.style.display = 'block'; return; }
+            err.style.display = 'none';
+            goTo(4);
+        }
+
+        function validateSchool() {
+            const v = document.getElementById('inp-school').value.trim();
+            const err = document.getElementById('err-school');
+            if (!v) { err.style.display = 'block'; return; }
+            err.style.display = 'none';
+            goTo(5);
+        }
+
+        function validateEmail() {
+            const inp = document.getElementById('inp-email');
+            const err = document.getElementById('err-email');
+            if (!inp.value || !inp.checkValidity()) { err.style.display = 'block'; return; }
+            err.style.display = 'none';
+            goTo(6);
+        }
+
+        /* PASSWORD TOGGLE */
+        function togglePassword(id) {
+            const inp = document.getElementById(id);
+            const btn = inp.nextElementSibling;
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+                inp.type = 'password';
+                btn.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        }
+
+        async function submitForm() {
+            const pass = document.getElementById('inp-password').value;
+            const confirm = document.getElementById('inp-password-confirm').value;
+            const err = document.getElementById('err-pass');
+            const errMatch = document.getElementById('err-pass-match');
+
+            err.style.display = 'none';
+            errMatch.style.display = 'none';
+
+            if (pass.length < 8) { err.style.display = 'block'; return; }
+            if (pass !== confirm) { errMatch.style.display = 'block'; return; }
+
+            const btn = document.getElementById('btn-submit');
+            btn.disabled = true;
+            btn.textContent = 'Création…';
+
+            const data = {
+                action: 'register',
+                nom: document.getElementById('inp-name').value.trim(),
+                email: document.getElementById('inp-email').value.trim(),
+                mot_de_passe: pass
+            };
+
+            let apiPath = '../../api/v1/auth.php';
+            if (!window.location.pathname.includes('/public/')) {
+                apiPath = '../api/v1/auth.php';
+            }
+
+            try {
+                const res = await fetch(apiPath, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    localStorage.setItem('kwizySession', JSON.stringify(result.user));
+                    document.getElementById('welcome-name').textContent = data.nom.split(' ')[0];
+                    goTo(7);
+                } else {
+                    err.textContent = result.message || 'Erreur inconnue.';
+                    err.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Créer mon compte';
+                }
+            } catch (e) {
+                err.textContent = 'Serveur injoignable.';
+                err.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Créer mon compte';
+            }
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-password').value;
+            const err = document.getElementById('err-login');
+
+            if (!email || !pass) { err.style.display = 'block'; return; }
+            err.style.display = 'none';
+
+            const btn = document.getElementById('btn-login');
+            btn.disabled = true;
+            btn.textContent = 'Connexion…';
+
+            let apiPath = '../../api/v1/auth.php';
+            if (!window.location.pathname.includes('/public/')) {
+                apiPath = '../api/v1/auth.php';
+            }
+
+            try {
+                const res = await fetch(apiPath, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'login', email, mot_de_passe: pass })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    localStorage.setItem('kwizySession', JSON.stringify(result.user));
+                    document.getElementById('welcome-name').textContent = result.user.nom.split(' ')[0];
+                    goTo(7);
+                } else {
+                    err.textContent = result.message || 'Identifiants incorrects.';
+                    err.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Se connecter';
+                }
+            } catch (e) {
+                err.textContent = 'Serveur injoignable.';
+                err.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Se connecter';
+            }
+        }
+
+        function redirectToDashboard() {
+            window.location.href = './professeurs.html';
+        }
+
+        /* ENTER KEY */
+        document.addEventListener('keydown', e => {
+            if (e.key !== 'Enter') return;
+            if (currentScreen === 1) validateDob();
+            else if (currentScreen === 2) goTo(3);
+            else if (currentScreen === 3) validateName();
+            else if (currentScreen === 4) validateSchool();
+            else if (currentScreen === 5) validateEmail();
+            else if (currentScreen === 6) submitForm();
+            else if (currentScreen === 8) handleLogin();
+        });
+    </script>
+</body>
+</html>

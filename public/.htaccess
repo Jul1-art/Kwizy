@@ -1,0 +1,22 @@
+# Bloquer l'accès direct aux fichiers PHP dans public pour forcer l'usage de l'API si besoin
+# (Désactivé localement pour éviter tout conflit ou erreur 500)
+# <Files "*.php">
+#     <IfModule mod_authz_core.c>
+#         Require all denied
+#     </IfModule>
+#     <IfModule !mod_authz_core.c>
+#         Order Deny,Allow
+#         Deny from all
+#     </IfModule>
+# </Files>
+
+# Exception pour runtime_config.php
+# <Files "runtime_config.php">
+#     <IfModule mod_authz_core.c>
+#         Require all granted
+#     </IfModule>
+#     <IfModule !mod_authz_core.c>
+#         Order Allow,Deny
+#         Allow from all
+#     </IfModule>
+# </Files>

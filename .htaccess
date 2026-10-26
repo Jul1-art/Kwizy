@@ -1,0 +1,8 @@
+# REDIRECTION VERS LE DOSSIER PUBLIC
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{ENV:REDIRECT_STATUS} ^$
+  RewriteCond %{REQUEST_URI} !/public/
+  RewriteCond %{REQUEST_URI} !/api/
+  RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

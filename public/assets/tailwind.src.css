@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans antialiased transition-colors duration-300;
+  }
+}
+
+@layer components {
+  .neon-accent-btn {
+    @apply bg-[#1C1C1C] dark:bg-white dark:text-black text-white uppercase tracking-[0.2em] font-bold py-3 px-8 transition-colors duration-200 cursor-pointer;
+    border-radius: 0;
+  }
+
+  .neon-accent-btn:hover {
+    @apply bg-secondary dark:bg-secondary dark:text-white;
+  }
+}

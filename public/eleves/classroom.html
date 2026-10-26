@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="fr" class="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Kwizy — Accès Élève</title>
+  <link rel="manifest" href="../manifest.json">
+  <link rel="icon" type="image/png" href="../assets/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Playfair+Display:wght@700;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../assets/kwizy-loader.js"></script>
+
+  <style>
+    :root {
+      --primary: #1C1C1C;
+      --secondary: #0070FF;
+      --surface: #f8f9fa;
+      --card: #ffffff;
+      --border: rgba(0, 0, 0, 0.06);
+      --muted: #888;
+      --sat: env(safe-area-inset-top, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+    }
+
+    .dark {
+      --primary: #ffffff;
+      --secondary: #0070FF;
+      --surface: #0a0a0a;
+      --card: #111111;
+      --border: rgba(255, 255, 255, 0.08);
+      --muted: #555;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--surface);
+      color: var(--primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      transition: background 0.4s, color 0.4s;
+    }
+
+    .back-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+      text-decoration: none;
+    }
+
+    .back-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+      border-color: var(--secondary);
+      color: var(--secondary);
+      transform: translateX(-4px);
+    }
+
+    .dark .back-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* ---- HEADER ---- */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: calc(1.5rem + var(--sat)) 2rem 1.5rem;
+      z-index: 1000;
+      background: rgba(248, 249, 250, 0.8);
+      backdrop-filter: blur(12px);
+    }
+
+    .dark .topbar {
+      background: rgba(10, 10, 10, 0.8);
+    }
+
+    .topbar-logo {
+      grid-column: 2;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--primary);
+      text-align: center;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .topbar-right {
+      grid-column: 3;
+      justify-self: end;
+      display: flex;
+      align-items: center;
+    }
+
+    .theme-toggle-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      /* Same rounded-lg as professeurs.html */
+      border: none;
+      background: transparent;
+      color: var(--primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+    }
+
+    .theme-toggle-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .dark .theme-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* ---- MAIN CARD ---- */
+    .main-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: clamp(2rem, 6vw, 3.5rem) clamp(1.2rem, 5vw, 3rem);
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.07), 0 4px 20px rgba(0, 0, 0, 0.04);
+      margin-top: 5rem;
+      transition: background 0.4s, border-color 0.4s;
+      position: relative;
+      overflow: hidden;
+      animation: floatUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes floatUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .main-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, var(--secondary), #00d2ff);
+    }
+
+    .dark .main-card {
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5), 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .card-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(0, 112, 255, 0.1), rgba(0, 112, 255, 0.2));
+      border: 1px solid rgba(0, 112, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      color: var(--secondary);
+      box-shadow: 0 8px 24px rgba(0, 112, 255, 0.15);
+      animation: pulseIcon 2.5s infinite ease-in-out alternate;
+    }
+
+    @keyframes pulseIcon {
+      from { transform: scale(1); box-shadow: 0 8px 24px rgba(0, 112, 255, 0.15); }
+      to { transform: scale(1.05); box-shadow: 0 12px 32px rgba(0, 112, 255, 0.25); }
+    }
+
+    .card-title {
+      font-size: clamp(1.4rem, 5vw, 1.8rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
+    }
+
+    .card-sub {
+      font-size: clamp(0.85rem, 3vw, 0.95rem);
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 90%;
+      margin: 0 auto;
+    }
+
+    /* ---- CODE INPUT ---- */
+    .panel {
+      display: none;
+    }
+
+    .panel.visible {
+      display: block;
+    }
+
+    .code-inputs {
+      display: flex;
+      gap: clamp(0.25rem, 1.5vw, 0.6rem);
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      width: 100%;
+    }
+
+    .code-digit {
+      flex: 1;
+      max-width: 60px;
+      height: clamp(54px, 14vw, 70px);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+      color: var(--primary);
+      font-size: clamp(1.4rem, 5vw, 2rem);
+      font-weight: 900;
+      text-align: center;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-transform: uppercase;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+      padding: 0;
+    }
+
+    .dark .code-digit {
+      background: rgba(255, 255, 255, 0.03);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .code-digit:focus {
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 4px rgba(0, 112, 255, 0.15), inset 0 2px 4px rgba(0,0,0,0.02);
+      transform: translateY(-2px);
+      background: var(--card);
+    }
+
+    .dark .code-digit:focus {
+      background: var(--card);
+    }
+
+    /* ---- SUBMIT BUTTON ---- */
+    .submit-btn {
+      width: 100%;
+      padding: 1.1rem;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--secondary), #0055ff);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      box-shadow: 0 4px 12px rgba(0, 112, 255, 0.2);
+    }
+
+    .submit-btn:hover {
+      background: linear-gradient(135deg, #0060dd, #0044cc);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 112, 255, 0.35);
+    }
+
+    .submit-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(0, 112, 255, 0.2);
+    }
+
+    .submit-btn:disabled {
+      background: var(--muted);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+      opacity: 0.6;
+    }
+
+    /* ---- ERROR / SUCCESS ---- */
+    .feedback {
+      margin-top: 1.5rem;
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-align: center;
+      display: none;
+    }
+
+    .feedback.error {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      display: block;
+    }
+
+    .feedback.success {
+      background: rgba(34, 197, 94, 0.1);
+      color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      display: block;
+    }
+
+    /* ---- FOOTER ---- */
+    .page-footer {
+      position: fixed;
+      bottom: 1.5rem;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0.2;
+      color: var(--primary);
+    }
+
+    .native-scan-hint {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px dashed var(--border);
+      text-align: center;
+    }
+
+    .native-scan-hint p {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .native-scan-icon {
+      font-size: 1.75rem;
+      color: var(--secondary);
+      opacity: 0.8;
+      display: inline-flex;
+      padding: 0.75rem;
+      border-radius: 14px;
+      background: rgba(0, 112, 255, 0.08);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .native-scan-icon:hover {
+      transform: scale(1.08);
+      background: rgba(0, 112, 255, 0.15);
+      opacity: 1;
+    }
+
+    /* ---- Tablette uniquement : dézoom à 80% ---- */
+    @media (min-width: 768px) and (max-width: 1279px) {
+      body {
+        zoom: 0.80;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <kwizy-loader></kwizy-loader>
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="../index.html" class="back-btn" title="Retour à l'accueil">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+    </div>
+    <a href="../index.html" class="topbar-logo">Kwizy</a>
+    <div class="topbar-right">
+      <button class="theme-toggle-btn" id="theme-toggle" aria-label="Changer le thème">
+        <i id="theme-icon" class="fas fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Card -->
+  <div class="main-card">
+    <div class="card-header" id="main-header">
+      <div class="card-icon relative">
+        <i data-lucide="sparkles" size="26" class="text-secondary"></i>
+      </div>
+      <h1 class="card-title">Rejoindre un Quiz</h1>
+      <p class="card-sub">Scanne le QR Code ou entre le code ci-dessous.</p>
+    </div>
+
+    <!-- Panel: Code -->
+    <div class="panel visible" id="panel-code">
+      <div class="code-inputs" id="code-inputs" aria-label="Champ de code d'accès">
+        <input class="code-digit" id="d0" maxlength="1" inputmode="text" autocomplete="off" aria-label="Caractère 1">
+        <input class="code-digit" id="d1" maxlength="1" inputmode="text" autocomplete="off" aria-label="Caractère 2">
+        <input class="code-digit" id="d2" maxlength="1" inputmode="text" autocomplete="off" aria-label="Caractère 3">
+        <input class="code-digit" id="d3" maxlength="1" inputmode="text" autocomplete="off" aria-label="Caractère 4">
+        <input class="code-digit" id="d4" maxlength="1" inputmode="text" autocomplete="off" aria-label="Caractère 5">
+        <input class="code-digit" id="d5" maxlength="1" inputmode="text" autocomplete="off" aria-label="Caractère 6">
+      </div>
+      <button class="submit-btn" id="submit-code" onclick="submitCode()">
+        <i data-lucide="check" style="width:18px;height:18px;"></i>
+        Valider le code
+      </button>
+
+      <div class="native-scan-hint">
+        <p>Tu peux aussi utiliser ton application Appareil Photo pour scanner le QR Code du professeur.</p>
+        <div class="native-scan-icon">
+          <i data-lucide="qr-code"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: Name (Hidden by default) -->
+    <div class="panel" id="panel-name">
+      <div style="margin-bottom:1rem;">
+        <label for="student-name"
+          style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);display:block;margin-bottom:.5rem;">Prénom
+          &amp; Nom</label>
+        <input type="text" id="student-name" class="code-digit"
+          style="width:100%;max-width:none;text-align:left;text-transform:none;font-size:1rem;height:52px;padding:0 1rem;"
+          placeholder="Ex : Marie Dupont">
+      </div>
+      <div id="class-field-wrap" style="margin-bottom:1.5rem;">
+        <label for="student-class"
+          style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);display:block;margin-bottom:.5rem;">Classe</label>
+        <input type="text" id="student-class" class="code-digit"
+          style="width:100%;max-width:none;text-align:left;text-transform:uppercase;font-size:1rem;height:52px;padding:0 1rem;"
+          placeholder="Ex : 2A, 1C, 3B">
+      </div>
+      <button class="submit-btn" id="start-quiz-btn" onclick="startFinal()">
+        C'est parti ! <i data-lucide="play" style="width:18px;height:18px;"></i>
+      </button>
+      <p style="text-align:center;margin-top:1.5rem;font-size:0.75rem;color:var(--muted);cursor:pointer;font-weight:600;"
+        onclick="resetEntry()">← Modifier le code</p>
+    </div>
+
+    <!-- Feedback -->
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <script>
+    // ---- INITIALIZATION ----
+    window.addEventListener('load', () => {
+      lucide.createIcons();
+      checkUrlParams();
+    });
+
+    // ---- THEME ----
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    let currentTheme = localStorage.getItem('kwizyTheme') || 'light';
+
+    function applyTheme(t) {
+      document.documentElement.className = t;
+      currentTheme = t;
+      localStorage.setItem('kwizyTheme', t);
+      if (themeIcon) {
+        themeIcon.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+      }
+    }
+    applyTheme(currentTheme);
+    themeToggle.addEventListener('click', () => applyTheme(currentTheme === 'dark' ? 'light' : 'dark'));
+
+    // ---- CODE INPUT LOGIC ----
+    const digits = Array.from(document.querySelectorAll('#code-inputs .code-digit'));
+    digits.forEach((input, i) => {
+      input.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 1);
+        e.target.value = val;
+        if (val && i < 5) digits[i + 1].focus();
+        checkCodeReady();
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && i > 0) {
+          digits[i - 1].focus();
+        }
+        if (e.key === 'Enter') submitCode();
+      });
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasted = (e.clipboardData.getData('text') || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6);
+        pasted.split('').forEach((ch, idx) => { if (digits[idx]) digits[idx].value = ch; });
+        const nextFocus = Math.min(pasted.length, 5);
+        digits[nextFocus].focus();
+        checkCodeReady();
+      });
+    });
+
+    function getCode() { return digits.map(d => d.value).join(''); }
+
+    function checkCodeReady() {
+      const ready = getCode().length === 6;
+      document.getElementById('submit-code').disabled = !ready;
+    }
+    checkCodeReady();
+
+    async function submitCode(codeOverride) {
+      const code = codeOverride || getCode();
+      if (code.length !== 6) return;
+
+      showFeedback('Vérification du code...', 'loading');
+
+      try {
+        let apiUrl = `../../api/v1/lookup.php?share_code=${encodeURIComponent(code)}`;
+        if (!window.location.pathname.includes('/public/')) {
+          apiUrl = apiUrl.replace('../../', '../');
+        }
+
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+
+        if (data.status === 'found') {
+          showFeedback('Code valide ! Prépare-toi...', 'success');
+          sessionStorage.setItem('kwizyCurrentQuiz', JSON.stringify(data.quiz));
+          sessionStorage.setItem('kwizyQuizCode', code);
+
+          setTimeout(() => {
+            document.getElementById('panel-code').classList.remove('visible');
+            document.getElementById('panel-name').classList.add('visible');
+            document.getElementById('student-name').focus();
+
+            // Update header
+            document.querySelector('.card-title').textContent = data.quiz.title || 'Quiz';
+            document.querySelector('.card-sub').textContent = "Prêt à commencer ? Entre ton nom pour rejoindre la session.";
+
+            clearFeedback();
+          }, 800);
+        } else {
+          showFeedback(data.message || 'Code invalide ou quiz non publié.', 'error');
+        }
+      } catch (err) {
+        console.error('Lookup error:', err);
+        showFeedback('Erreur de connexion au serveur.', 'error');
+      }
+    }
+
+    function resetEntry() {
+      document.getElementById('panel-name').classList.remove('visible');
+      document.getElementById('panel-code').classList.add('visible');
+      document.querySelector('.card-title').textContent = "Rejoindre un Quiz";
+      document.querySelector('.card-sub').textContent = "Scanne le QR Code avec ton téléphone ou entre le code manuel ci-dessous.";
+      digits[0].focus();
+    }
+
+    function startFinal() {
+      const name = document.getElementById('student-name').value.trim();
+      const cls = (document.getElementById('student-class')?.value || '').trim().toUpperCase();
+
+      if (!name) {
+        showFeedback("Merci d'entrer ton prénom et nom.", 'error');
+        return;
+      }
+      if (!cls) {
+        showFeedback("Merci d'entrer ta classe (ex: 2A, 1C).", 'error');
+        return;
+      }
+      const studentId = 'std_' + Math.random().toString(36).substr(2, 9);
+      const quizData = sessionStorage.getItem('kwizyCurrentQuiz');
+      const quizCode = sessionStorage.getItem('kwizyQuizCode');
+
+      if (!quizData || !quizCode) {
+        showFeedback("Session expirée. Merci de rafraîchir la page.", 'error');
+        setTimeout(() => location.reload(), 1500);
+        return;
+      }
+
+      sessionStorage.setItem('kwizyStudentName', name);
+      sessionStorage.setItem('kwizyStudentId', studentId);
+      sessionStorage.setItem('kwizyStudentClass', cls);
+
+      showFeedback('Lancement du quiz...', 'success');
+
+      // Utilisation de replace pour éviter les boucles de retour
+      setTimeout(() => {
+        window.location.replace('../quiz/quiz.html');
+      }, 600);
+    }
+
+    // ---- FEEDBACK ----
+    function showFeedback(msg, type) {
+      const el = document.getElementById('feedback');
+      el.textContent = msg;
+      el.className = 'feedback ' + (type === 'loading' ? 'success' : type);
+      if (type === 'loading') el.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> ' + msg;
+    }
+
+    function clearFeedback() {
+      const el = document.getElementById('feedback');
+      el.className = 'feedback';
+      el.textContent = '';
+    }
+
+    function checkUrlParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const codeParam = urlParams.get('code');
+      if (codeParam && codeParam.length === 6) {
+        const code = codeParam.toUpperCase();
+        code.split('').forEach((ch, i) => { if (digits[i]) digits[i].value = ch; });
+        checkCodeReady();
+        submitCode(code);
+      }
+    }
+
+    // ---- CLEANUP LEGACY SERVICE WORKERS & CACHES ----
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let registration of registrations) {
+          registration.unregister().then(() => {
+            console.log('Legacy Service Worker unregistered successfully.');
+          });
+        }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(keys => {
+        keys.forEach(key => {
+          caches.delete(key).then(() => {
+            console.log('Legacy cache cleared:', key);
+          });
+        });
+      });
+    }
+  </script>
+</body>
+
+</html>

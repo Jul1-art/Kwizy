@@ -1,0 +1,244 @@
+<style>
+  .fc-scene {
+    min-height: 480px;
+    background: #111;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 0 2.5rem
+  }
+
+  .fc-layout {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    width: 100%;
+    max-width: 620px;
+    padding: 0 1rem
+  }
+
+  .fc-arrow {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 0.5px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background 0.15s, transform 0.12s;
+    user-select: none
+  }
+
+  .fc-arrow:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    transform: scale(1.08)
+  }
+
+  .fc-arrow:active {
+    transform: scale(0.93)
+  }
+
+  .fc-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px
+  }
+
+  .fc-stack {
+    position: relative;
+    width: 100%;
+    height: 230px
+  }
+
+  .fc-card {
+    position: absolute;
+    inset: 0;
+    background: var(--color-background-primary);
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.75rem;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.65;
+    font-weight: 400;
+    color: var(--color-text-primary);
+    will-change: transform, opacity
+  }
+
+  .fc-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 24px;
+    touch-action: none;
+    position: relative;
+    padding: 0 10px;
+  }
+
+  .fc-dot {
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.22);
+    transition: all 0.3s cubic-bezier(.4, 0, .2, 1);
+    cursor: pointer;
+    flex-shrink: 0;
+    pointer-events: none; /* Let the container handle pointer events for dragging */
+  }
+
+  .fc-dots:hover .fc-dot {
+    /* Optional: any hover effects can go here if needed */
+  }
+</style>
+
+<h2 class="sr-only">Flashcards interactives</h2>
+
+<div class="fc-scene">
+  <div class="fc-layout">
+    <div class="fc-arrow" id="fc-prev" aria-label="Précédent"><i class="ti ti-chevron-left"></i></div>
+    <div class="fc-center">
+      <div class="fc-stack" id="fc-stack"></div>
+      <div class="fc-dots" id="fc-dots"></div>
+    </div>
+    <div class="fc-arrow" id="fc-next" aria-label="Suivant"><i class="ti ti-chevron-right"></i></div>
+  </div>
+</div>
+
+<script>
+  var cards = [
+    "La lumière met environ 8 minutes et 20 secondes pour voyager du Soleil jusqu'à la Terre.",
+    "Le cœur d'une crevette se situe dans sa tête.",
+    "Il est impossible de fredonner tout en se pinçant le nez.",
+    "Les pieuvres ont trois cœurs et leur sang est bleu.",
+    "Une journée sur Vénus est plus longue qu'une année entière sur Vénus."
+  ];
+  var N = cards.length;
+  var current = 0;
+  var animating = false;
+
+  function mod(i) { return ((i % N) + N) % N; }
+
+  function slot(idx) {
+    var s = idx - current;
+    if (s > Math.floor(N / 2)) s -= N;
+    if (s < -Math.floor(N / 2)) s += N;
+    return s;
+  }
+
+  function styleForSlot(s) {
+    var a = Math.abs(s);
+    if (a === 0) return { tx: 0, ty: 0, rot: 0, sc: 1, op: 1, z: 10 };
+    if (a === 1) { var sg = s > 0 ? 1 : -1; return { tx: sg * 16, ty: 12, rot: sg * 5, sc: 0.93, op: 0.65, z: 7 }; }
+    if (a === 2) { var sg = s > 0 ? 1 : -1; return { tx: sg * 26, ty: 22, rot: sg * 9, sc: 0.85, op: 0.35, z: 4 }; }
+    return { tx: 0, ty: 30, rot: 0, sc: 0.78, op: 0, z: 1 };
+  }
+
+  function applyStyle(el, s, instant) {
+    var t = styleForSlot(s);
+    el.style.transition = instant ? 'none' : 'transform 0.42s cubic-bezier(.4,0,.2,1),opacity 0.42s ease';
+    el.style.transform = 'translateX(' + t.tx + 'px) translateY(' + t.ty + 'px) rotate(' + t.rot + 'deg) scale(' + t.sc + ')';
+    el.style.opacity = t.op;
+    el.style.zIndex = t.z;
+    el.style.pointerEvents = s === 0 ? 'auto' : 'none';
+  }
+
+  function renderStack(instant) {
+    var stackEl = document.getElementById('fc-stack');
+    if (!stackEl.children.length) {
+      for (var i = 0; i < N; i++) {
+        var c = document.createElement('div');
+        c.className = 'fc-card';
+        c.dataset.idx = i;
+        c.textContent = cards[i];
+        stackEl.appendChild(c);
+      }
+    }
+    var els = stackEl.children;
+    for (var i = 0; i < els.length; i++) {
+      applyStyle(els[i], slot(parseInt(els[i].dataset.idx)), instant);
+    }
+  }
+
+  function renderDots() {
+    var dotsEl = document.getElementById('fc-dots');
+    dotsEl.innerHTML = '';
+    for (var i = 0; i < N; i++) {
+      (function (idx) {
+        var d = document.createElement('div');
+        d.className = 'fc-dot';
+        d.setAttribute('role', 'button');
+        d.setAttribute('aria-label', 'Carte ' + (idx + 1));
+        var dist = Math.min(Math.abs(idx - current), N - Math.abs(idx - current));
+        if (dist === 0) { d.style.width = '9px'; d.style.height = '9px'; d.style.background = 'rgba(255,255,255,0.95)'; d.style.transform = 'scale(1.2)'; }
+        else if (dist === 1) { d.style.width = '6px'; d.style.height = '6px'; d.style.background = 'rgba(255,255,255,0.38)'; d.style.transform = 'scale(1)'; }
+        else { d.style.width = '5px'; d.style.height = '5px'; d.style.background = 'rgba(255,255,255,0.16)'; d.style.transform = 'scale(1)'; }
+        dotsEl.appendChild(d);
+      })(i);
+    }
+  }
+
+  function goTo(target, isScrub) {
+    if ((animating && !isScrub) || target === current) return;
+    if (!isScrub) animating = true;
+    current = target;
+    renderStack(false);
+    renderDots();
+    if (!isScrub) setTimeout(function () { animating = false; }, 450);
+  }
+
+  function go(dir) {
+    goTo(mod(current + dir));
+  }
+
+  document.getElementById('fc-prev').addEventListener('click', function () { go(-1); });
+  document.getElementById('fc-next').addEventListener('click', function () { go(1); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft') go(-1);
+    if (e.key === 'ArrowRight') go(1);
+  });
+
+  // Drag interaction on dots
+  var dotsContainer = document.getElementById('fc-dots');
+  var isDragging = false;
+  
+  function handleScrub(e) {
+    var rect = dotsContainer.getBoundingClientRect();
+    // Calculate progress based on pointer X position relative to container
+    var x = e.clientX - rect.left;
+    var fraction = x / rect.width;
+    var idx = Math.floor(fraction * N);
+    if (idx < 0) idx = 0;
+    if (idx >= N) idx = N - 1;
+    goTo(idx, true);
+  }
+
+  dotsContainer.addEventListener('pointerdown', function(e) {
+    isDragging = true;
+    dotsContainer.setPointerCapture(e.pointerId);
+    handleScrub(e);
+  });
+  dotsContainer.addEventListener('pointermove', function(e) {
+    if (isDragging) handleScrub(e);
+  });
+  dotsContainer.addEventListener('pointerup', function(e) {
+    isDragging = false;
+    dotsContainer.releasePointerCapture(e.pointerId);
+  });
+  dotsContainer.addEventListener('pointercancel', function() {
+    isDragging = false;
+  });
+
+  renderStack(true);
+  renderDots();
+</script>

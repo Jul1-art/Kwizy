@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Kwizy AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://unpkg.com/marked@9.1.6/marked.min.js"></script>
+
+  <style>
+    :root {
+      --bg-page: #f5f5f7;
+      --bg-app: rgba(255,255,255,0.85);
+      --bg-input: #f4f4f5;
+      --text-main: #1d1d1f;
+      --text-muted: #86868b;
+      --border: rgba(0,0,0,0.08);
+      --accent: #0070FF;
+      --accent-glow: rgba(0,112,255,0.15);
+      --card-bg: #fff;
+      --text-soft: #86868b;
+      --ease-out: cubic-bezier(0.16,1,0.3,1);
+      --ease-spring: cubic-bezier(0.175,0.885,0.32,1.1);
+    }
+    body.dark {
+      --bg-page: #000;
+      --bg-app: rgba(14,14,16,0.9);
+      --bg-input: #1a1a1c;
+      --text-main: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --border: rgba(255,255,255,0.08);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59,130,246,0.2);
+      --card-bg: #1a1a1c;
+      --text-soft: #a1a1aa;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      background:var(--bg-page);
+      font-family:'Inter',system-ui,-apple-system,sans-serif;
+      color:var(--text-main);
+      display:flex;justify-content:center;align-items:center;
+      height:100vh;overflow:hidden;
+      -webkit-font-smoothing:antialiased;
+      transition:background 0.4s,color 0.4s;
+    }
+
+    .ambient-bg{
+      position:absolute;top:0;left:0;right:0;bottom:0;z-index:0;
+      background:radial-gradient(circle at 10% 10%,rgba(0,112,255,0.07) 0%,transparent 40%),
+                 radial-gradient(circle at 90% 90%,rgba(99,102,241,0.05) 0%,transparent 50%);
+      filter:blur(60px);
+      animation:ambientBreathe 10s ease-in-out infinite alternate;
+    }
+    body.dark .ambient-bg{
+      background:radial-gradient(circle at 10% 10%,rgba(0,85,255,0.35) 0%,transparent 40%),
+                 radial-gradient(circle at 90% 90%,rgba(99,102,241,0.25) 0%,transparent 50%);
+    }
+    @keyframes ambientBreathe{0%{transform:scale(1);opacity:0.8}100%{transform:scale(1.1);opacity:1}}
+
+    .app{
+      position:relative;z-index:1;
+      width:calc(100% - 24px);height:calc(100% - 24px);
+      background:var(--bg-app);
+      backdrop-filter:blur(24px) saturate(180%);
+      -webkit-backdrop-filter:blur(24px) saturate(180%);
+      border-radius:18px;border:1px solid var(--border);
+      box-shadow:0 25px 50px -12px rgba(0,0,0,0.18);
+      display:flex;flex-direction:column;overflow:hidden;
+      opacity:0;transform:scale(0.97) translateY(8px);
+      animation:scaleIn 0.8s var(--ease-out) forwards;
+    }
+    @keyframes scaleIn{to{opacity:1;transform:scale(1) translateY(0)}}
+
+    /* Bottom glow */
+    .bottom-glow{
+      position:absolute;bottom:-14px;left:18%;right:18%;height:28px;
+      background:linear-gradient(90deg,rgba(0,112,255,0.6),rgba(99,102,241,0.6),rgba(0,112,255,0.6));
+      filter:blur(16px);pointer-events:none;z-index:10;
+      animation:glowPulse 4s ease-in-out infinite alternate;
+    }
+    @keyframes glowPulse{0%{transform:scaleX(0.85);opacity:0.45}100%{transform:scaleX(1.1);opacity:0.8}}
+
+    /* Header */
+    .header{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:14px 20px;border-bottom:1px solid var(--border);
+      opacity:0;animation:fadeIn 0.8s var(--ease-out) forwards 0.25s;
+    }
+    .header-title{
+      display:flex;align-items:center;gap:8px;
+      font-size:0.82rem;font-weight:600;color:var(--accent);letter-spacing:0.02em;
+    }
+    .header-title i{font-size:14px}
+    .btn-theme{
+      width:30px;height:30px;border-radius:50%;
+      background:transparent;border:1px solid var(--border);
+      color:var(--text-muted);display:flex;align-items:center;justify-content:center;
+      cursor:pointer;font-size:12px;transition:all 0.2s;
+    }
+    .btn-theme:hover{color:var(--text-main);border-color:var(--text-main)}
+
+    /* Chat area */
+    .chat-area{
+      flex:1;overflow-y:auto;padding:0 20px;scroll-behavior:smooth;
+      display:flex;flex-direction:column;
+    }
+    .chat-area::-webkit-scrollbar{width:5px}
+    .chat-area::-webkit-scrollbar-track{background:transparent}
+    .chat-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+    .messages{
+      display:flex;flex-direction:column;gap:20px;
+      padding:28px 0;max-width:800px;margin:0 auto;width:100%;
+    }
+
+    /* Empty state */
+    .empty-state{
+      flex:1;display:flex;flex-direction:column;
+      justify-content:center;align-items:center;
+      text-align:center;padding:40px 20px;min-height:0;
+    }
+    .empty-title{
+      font-size:clamp(1.5rem,4vw,2rem);font-weight:700;
+      letter-spacing:-0.03em;margin-bottom:20px;
+      background:linear-gradient(135deg,var(--accent),#6366f1);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      opacity:0;filter:blur(8px);transform:translateY(12px);
+      animation:blurReveal 1s var(--ease-out) forwards 0.2s;
+    }
+    .empty-typing-wrap{
+      display:flex;align-items:center;min-height:28px;margin-top:6px;
+      cursor:pointer;opacity:0;animation:blurReveal 1s var(--ease-out) forwards 0.5s;
+    }
+    .empty-typing-text{
+      font-size:0.88rem;color:var(--text-muted);font-style:italic;
+      transition:color 0.15s;
+    }
+    .empty-typing-wrap:hover .empty-typing-text{color:var(--text-main)}
+    .empty-typing-cursor{
+      display:inline-block;width:1.5px;height:0.88em;
+      background:var(--accent);border-radius:1px;vertical-align:text-bottom;
+      animation:blink 1s step-end infinite;margin-left:2px;opacity:0.6;
+    }
+    @keyframes blurReveal{to{opacity:1;filter:blur(0);transform:translateY(0)}}
+
+    /* Message rows */
+    .msg-row{display:flex;width:100%}
+    .msg-row.user{justify-content:flex-end}
+    .msg-row.ai{justify-content:flex-start}
+
+    @keyframes bubblePop{
+      0%{opacity:0;transform:scale(0.92) translateY(12px);filter:blur(3px)}
+      100%{opacity:1;transform:scale(1) translateY(0);filter:blur(0)}
+    }
+    @keyframes slideUp{
+      from{opacity:0;transform:translateY(8px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+
+    /* Chat bubble wrap (EasyLoc style) */
+    .chat-bubble-wrap{
+      display:flex;gap:8px;align-items:flex-start;
+      animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1);
+      max-width:86%;
+    }
+    .chat-bubble-wrap.user-wrap{flex-direction:row-reverse;margin-left:auto}
+
+    .bubble-avatar{
+      width:28px;height:28px;border-radius:9px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      font-size:11px;font-weight:700;
+    }
+    .bubble-avatar.ai-av{
+      background:linear-gradient(135deg,var(--accent),#6366f1);
+      color:#fff;box-shadow:0 2px 8px rgba(0,112,255,0.35);font-size:13px;
+    }
+    .bubble-avatar.user-av{background:#334155;color:#fff;font-size:9px;letter-spacing:0.03em}
+    body.dark .bubble-avatar.user-av{background:#475569}
+
+    .bubble-col{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+
+    /* User bubble */
+    .bubble-user{
+      padding:10px 16px;font-size:0.875rem;line-height:1.6;
+      border-radius:18px;border-bottom-right-radius:4px;word-break:break-word;
+      background:linear-gradient(145deg,#0070FF,#3b82f6);color:#fff;
+      box-shadow:0 3px 12px rgba(0,112,255,0.25);
+    }
+    body.dark .bubble-user{background:linear-gradient(145deg,#1d4ed8,#2563eb);box-shadow:0 3px 14px rgba(29,78,216,0.45)}
+
+    /* AI response — direct, no bubble */
+    .ai-msg{
+      padding:4px 0;font-size:0.875rem;line-height:1.72;
+      word-break:break-word;overflow-wrap:anywhere;
+    }
+    .ai-msg p{margin-bottom:0.55em}
+    .ai-msg p:last-child{margin-bottom:0}
+    .ai-msg ul,.ai-msg ol{padding-left:1.25rem;margin:0.4em 0}
+    .ai-msg li{margin:0.2em 0}
+    .ai-msg strong{font-weight:600}
+    .ai-msg h1,.ai-msg h2,.ai-msg h3{font-weight:700;margin:0.7em 0 0.3em}
+    .ai-msg code{background:rgba(0,0,0,0.06);border-radius:4px;padding:0.1em 0.3em;font-size:0.82em}
+    body.dark .ai-msg code{background:rgba(255,255,255,0.08)}
+    .ai-msg hr{border:none;border-top:1px solid var(--border);margin:0.6em 0}
+
+    /* Stream cursor */
+    .stream-cursor{display:inline-block;width:2px;height:1em;background:var(--accent);border-radius:1px;vertical-align:text-bottom;animation:blink 1s step-end infinite;margin-left:1px}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+    /* Bubble actions */
+    .bubble-actions{display:flex;gap:4px;margin-top:4px;opacity:0;transition:opacity 0.15s}
+    .chat-bubble-wrap:hover .bubble-actions{opacity:1}
+    .bubble-action-btn{
+      display:inline-flex;align-items:center;gap:5px;
+      padding:4px 10px;border-radius:999px;
+      background:transparent;border:1px solid var(--border);
+      color:var(--text-muted);font-size:11px;font-family:inherit;cursor:pointer;
+      transition:all 0.15s;
+    }
+    .bubble-action-btn:hover{background:var(--bg-input);color:var(--text-main)}
+
+    /* ── AI Thinking Indicator (EasyLoc) ── */
+    .ai-thinking{
+      display:flex;align-items:center;gap:8px;
+      background:var(--card-bg);border:1px solid var(--border);
+      border-radius:14px;padding:10px 14px;
+      color:var(--text-soft);min-width:180px;max-width:280px;
+      font-size:0.82rem;
+    }
+    .ai-thinking::before{
+      content:'';width:7px;height:7px;border-radius:50%;flex-shrink:0;
+      background:var(--accent);animation:thinkPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes thinkPulse{
+      0%,100%{box-shadow:0 0 0 0 var(--accent-glow)}
+      50%{box-shadow:0 0 0 5px transparent}
+    }
+    .thinking-phrase{transition:opacity 0.22s ease;font-style:italic}
+
+    /* ── Thinking block (magistral) ── */
+    .ai-think-block{margin-bottom:4px;font-size:0.77rem}
+    .ai-think-block.hidden-if-empty{display:none}
+    .ai-think-toggle{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:2px 0;background:transparent;border:none;
+      cursor:pointer;font-family:inherit;
+      color:var(--text-soft);opacity:0.72;transition:opacity 0.18s;
+    }
+    .ai-think-toggle:hover{opacity:1}
+    .ai-think-dot{
+      width:7px;height:7px;border-radius:50%;flex-shrink:0;
+      background:var(--text-soft);opacity:0.35;
+      transition:background 0.3s,opacity 0.3s;
+    }
+    .ai-think-block.thinking-active .ai-think-dot{
+      background:#22c55e;opacity:1;
+      animation:thinkDotPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes thinkDotPulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.5)}
+      60%{box-shadow:0 0 0 5px rgba(34,197,94,0)}
+    }
+    .ai-think-label{font-size:0.77rem;color:var(--text-soft)}
+    .ai-think-chevron{
+      font-size:0.5rem;opacity:0.45;flex-shrink:0;
+      transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+    .ai-think-block:not(.collapsed) .ai-think-chevron{transform:rotate(90deg)}
+    .ai-think-content{
+      padding:6px 0 8px 16px;margin-left:3px;
+      white-space:pre-wrap;font-style:italic;
+      font-size:0.76rem;color:var(--text-soft);line-height:1.55;
+      max-height:200px;overflow-y:auto;
+      border-left:1.5px solid var(--border);scrollbar-width:none;
+    }
+    .ai-think-content::-webkit-scrollbar{display:none}
+    .ai-think-block.collapsed .ai-think-content{display:none}
+
+    /* Input area */
+    .input-wrapper{
+      padding:0 20px 20px;
+      display:flex;flex-direction:column;align-items:center;
+      background:linear-gradient(to top,var(--bg-app) 60%,transparent);
+    }
+    .input-box{
+      width:100%;max-width:800px;
+      background:var(--bg-input);border:1px solid var(--border);
+      border-radius:28px;display:flex;align-items:flex-end;
+      padding:8px 12px;
+      box-shadow:0 8px 28px rgba(0,0,0,0.06);
+      transition:all 0.4s var(--ease-spring);
+    }
+    body.dark .input-box{box-shadow:0 8px 28px rgba(0,0,0,0.3)}
+    .input-box:focus-within{
+      transform:translateY(-4px) scale(1.01);
+      border-color:rgba(0,112,255,0.35);
+      box-shadow:0 15px 35px -5px rgba(0,0,0,0.08),0 0 0 1px rgba(0,112,255,0.15);
+    }
+    body.dark .input-box:focus-within{
+      box-shadow:0 15px 35px -5px rgba(0,0,0,0.45),0 0 0 1px rgba(59,130,246,0.2);
+    }
+    .kwz-textarea{
+      flex:1;background:transparent;border:none;
+      color:var(--text-main);font-family:inherit;font-size:0.95rem;
+      padding:10px 14px;min-height:24px;max-height:150px;resize:none;outline:none;
+    }
+    .kwz-textarea::placeholder{color:var(--text-muted)}
+    .btn-send{
+      width:34px;height:34px;border-radius:50%;flex-shrink:0;
+      background:var(--accent);border:none;color:#fff;
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;margin-bottom:2px;font-size:13px;
+      transition:all 0.25s var(--ease-spring);
+    }
+    .btn-send:hover:not(:disabled){transform:scale(1.08) translateY(-2px)}
+    .btn-send:active:not(:disabled){transform:scale(0.92)}
+    .btn-send:disabled{background:var(--border);color:var(--text-muted);cursor:not-allowed;transform:none;box-shadow:none}
+    .btn-mic{
+      width:34px;height:34px;border-radius:50%;flex-shrink:0;
+      background:transparent;border:1px solid var(--border);
+      color:var(--text-muted);display:flex;align-items:center;justify-content:center;
+      cursor:pointer;margin-bottom:2px;font-size:13px;transition:all 0.2s;
+    }
+    .btn-mic:hover{color:var(--text-main);border-color:rgba(0,112,255,0.35)}
+    .btn-mic.recording{background:#ef4444;border-color:#ef4444;color:#fff}
+    .btn-mic.stopping{background:#fca5a5;border-color:#fca5a5;color:#fff;opacity:0.7}
+    .btn-mic.recording .fa-microphone{display:none}
+    .mic-bars{display:none;align-items:flex-end;gap:2px;height:14px}
+    .btn-mic.recording .mic-bars{display:flex}
+    .mic-bars span{width:2px;background:#fff;border-radius:1px;animation:micWave 0.8s ease-in-out infinite}
+    .mic-bars span:nth-child(1){height:5px;animation-delay:0s}
+    .mic-bars span:nth-child(2){height:10px;animation-delay:0.1s}
+    .mic-bars span:nth-child(3){height:14px;animation-delay:0.2s}
+    .mic-bars span:nth-child(4){height:8px;animation-delay:0.15s}
+    .mic-bars span:nth-child(5){height:5px;animation-delay:0.05s}
+    @keyframes micWave{0%,100%{transform:scaleY(0.4)}50%{transform:scaleY(1)}}
+    .footer-note{font-size:0.7rem;color:var(--text-muted);margin-top:10px;text-align:center}
+
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @media(max-width:600px){
+      .app{width:100%;height:100%;border-radius:0;border:none;animation:fadeIn 0.4s forwards}
+    }
+  </style>
+</head>
+<body class="dark">
+  <div class="ambient-bg"></div>
+  <div class="app" id="kwz-app"></div>
+
+  <script>
+    // ─── Theme ────────────────────────────────────────────────────────────────
+    const savedTheme = localStorage.getItem('kwizy-theme') || 'dark';
+    if (savedTheme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+
+    // ─── Thinking words (EasyLoc) ─────────────────────────────────────────────
+    const THINKING_WORDS = ['Réflexion','Analyse','Calcul','Synthèse','Raisonnement','Élaboration','Évaluation','Formulation','Traitement','Génération'];
+
+    function createThinkingEl() {
+      const el = document.createElement('div');
+      el.className = 'chat-bubble-wrap';
+      el.innerHTML = `
+        <div class="bubble-avatar ai-av"><i class="fas fa-wand-magic-sparkles"></i></div>
+        <div class="ai-thinking"><span class="thinking-phrase"></span></div>`;
+      const span = el.querySelector('.thinking-phrase');
+      let stopped = false, lastWord = '', typeTimer = null, loopTimer = null;
+
+      function pickWord() {
+        const pool = THINKING_WORDS.filter(w => w !== lastWord);
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+      function typeWord(word, cb) {
+        let i = 0; span.textContent = ''; span.style.opacity = '1';
+        typeTimer = setInterval(() => {
+          if (stopped) { clearInterval(typeTimer); return; }
+          i++; span.textContent = word.slice(0, i) + '…';
+          if (i >= word.length) { clearInterval(typeTimer); cb && cb(); }
+        }, 55);
+      }
+      function loop() {
+        if (stopped) return;
+        const word = pickWord(); lastWord = word;
+        typeWord(word, () => {
+          loopTimer = setTimeout(() => {
+            if (stopped) return;
+            span.style.transition = 'opacity 0.25s'; span.style.opacity = '0';
+            setTimeout(() => { span.style.transition = ''; loop(); }, 280);
+          }, 1000);
+        });
+      }
+      loop();
+      el._clearThinking = () => { stopped = true; clearInterval(typeTimer); clearTimeout(loopTimer); };
+      return el;
+    }
+
+    // ─── API key rotation ─────────────────────────────────────────────────────
+    const MISTRAL_KEYS = [];
+    let _lastKeyIndex = -1;
+
+    function pickApiKey() {
+      const customKey = localStorage.getItem('kwizy-mistral-key');
+      if (customKey && customKey.trim() !== '') return customKey.trim();
+      if (MISTRAL_KEYS.length === 0) return '';
+      const pool = MISTRAL_KEYS.map((k, i) => i).filter(i => i !== _lastKeyIndex);
+      _lastKeyIndex = pool.length ? pool[Math.floor(Math.random() * pool.length)] : 0;
+      return MISTRAL_KEYS[_lastKeyIndex] || '';
+    }
+
+    // ─── Main widget ──────────────────────────────────────────────────────────
+    const Widget = {
+      messages: [],
+      context: null,
+      busy: false,
+      _streamController: null,
+      _typingTimer: null,
+      _micState: 'idle',
+      _micRec: null,
+      _micRestartTimer: null,
+      _micBase: '',
+      _micFinalText: '',
+
+      escHtml(s) {
+        return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      },
+
+      renderMd(text) {
+        if (typeof marked !== 'undefined') return marked.parse(text, { breaks: true, gfm: true });
+        return this.escHtml(text).replace(/\n/g,'<br>');
+      },
+
+      render() {
+        const root = document.getElementById('kwz-app');
+        const isDark = document.body.classList.contains('dark');
+
+        root.innerHTML = `
+          <div class="bottom-glow"></div>
+          <div class="header">
+            <div class="header-title">Kwizy AI</div>
+            <button class="btn-theme" id="btn-theme" title="Changer de thème">
+              <i class="fas fa-${isDark ? 'sun' : 'moon'}"></i>
+            </button>
+          </div>
+          <div class="chat-area" id="chat-area">
+            ${this.messages.length === 0 ? `
+              <div class="empty-state">
+                <div class="empty-title">Kwizy IA</div>
+                <div class="empty-typing-wrap" onclick="Widget._fillFromTyping()">
+                  <span class="empty-typing-text" id="empty-typing-text"></span>
+                  <span class="empty-typing-cursor"></span>
+                </div>
+              </div>
+            ` : `<div class="messages" id="messages"></div>`}
+          </div>
+          <div class="input-wrapper">
+            <form class="input-box" id="input-form">
+              <textarea id="kwz-input" class="kwz-textarea" placeholder="Posez une question sur vos élèves…" rows="1" ${this.busy ? 'disabled' : ''}></textarea>
+              <button type="button" class="btn-mic" id="btn-mic" title="Dicter votre question">
+                <i class="fas fa-microphone"></i>
+                <div class="mic-bars"><span></span><span></span><span></span><span></span><span></span></div>
+              </button>
+              <button type="submit" class="btn-send" ${this.busy ? 'disabled' : ''}>
+                <i class="fas fa-arrow-up"></i>
+              </button>
+            </form>
+            <div class="footer-note">Kwizy AI · magistral-medium</div>
+          </div>
+        `;
+
+        this._bind();
+        if (this.messages.length === 0) this._startTypingAnim();
+
+        // Re-render all previous messages
+        if (this.messages.length > 0) {
+          const container = document.getElementById('messages');
+          if (container) {
+            this.messages.forEach((m, i) => {
+              container.appendChild(this._makeBubble(m.role, m.content, false));
+            });
+            this._scroll();
+          }
+        }
+      },
+
+      _bind() {
+        document.getElementById('btn-theme')?.addEventListener('click', () => {
+          document.body.classList.toggle('dark');
+          localStorage.setItem('kwizy-theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+          this.render();
+        });
+
+        const form = document.getElementById('input-form');
+        const ta = document.getElementById('kwz-input');
+
+        form?.addEventListener('submit', e => { e.preventDefault(); this.send(); });
+
+        ta?.addEventListener('input', function() {
+          this.style.height = 'auto';
+          this.style.height = this.scrollHeight + 'px';
+        });
+
+        ta?.addEventListener('keydown', e => {
+          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.send(); }
+        });
+
+        if (ta && !this.busy) ta.focus();
+        this._initVoice();
+      },
+
+      _initVoice() {
+        const micBtn = document.getElementById('btn-mic');
+        if (!micBtn) return;
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) { micBtn.style.display = 'none'; return; }
+
+        if (this._micRec) {
+          try { this._micRec.abort(); } catch(e) {}
+          this._micRec = null;
+        }
+        clearTimeout(this._micRestartTimer);
+        this._micState = 'idle';
+
+        const self = this;
+
+        function buildRec() {
+          const r = new SR();
+          r.lang = 'fr-FR';
+          r.interimResults = true;
+          r.continuous = true;
+          r.maxAlternatives = 1;
+          let _rafId = null;
+          let _pendingInterim = '';
+
+          r.onstart = function() {
+            self._micState = 'listening';
+            micBtn.classList.add('recording');
+            micBtn.classList.remove('stopping');
+            micBtn.title = 'Écoute en cours — cliquez pour arrêter';
+          };
+
+          r.onresult = function(e) {
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+              if (e.results[i].isFinal) {
+                self._micFinalText += e.results[i][0].transcript + ' ';
+                _pendingInterim = '';
+              } else {
+                _pendingInterim = e.results[i][0].transcript;
+              }
+            }
+            const ta = document.getElementById('kwz-input');
+            if (!ta) return;
+            if (_rafId) cancelAnimationFrame(_rafId);
+            _rafId = requestAnimationFrame(function() {
+              _rafId = null;
+              const next = ((self._micBase ? self._micBase + ' ' : '') + self._micFinalText + _pendingInterim)
+                .replace(/  +/g, ' ').trimStart();
+              if (ta.value !== next) {
+                ta.value = next;
+                ta.dispatchEvent(new Event('input'));
+              }
+            });
+          };
+
+          r.onerror = function(e) {
+            if (e.error === 'aborted' || e.error === 'no-speech') return;
+            hardStop();
+          };
+
+          r.onend = function() {
+            if (self._micState === 'listening') {
+              clearTimeout(self._micRestartTimer);
+              const ta = document.getElementById('kwz-input');
+              if (ta) { self._micBase = ta.value.trim(); self._micFinalText = ''; _pendingInterim = ''; }
+              self._micRestartTimer = setTimeout(function() {
+                if (self._micState !== 'listening') return;
+                try { self._micRec = buildRec(); self._micRec.start(); }
+                catch(err) { hardStop(); }
+              }, 150);
+            } else {
+              cleanup();
+            }
+          };
+
+          return r;
+        }
+
+        function start() {
+          if (self._micState !== 'idle' || self.busy) return;
+          const ta = document.getElementById('kwz-input');
+          self._micBase = ta ? ta.value.trim() : '';
+          self._micFinalText = '';
+          self._micRec = buildRec();
+          try { self._micRec.start(); } catch(e) {}
+        }
+
+        function stop() {
+          if (self._micState === 'idle') return;
+          self._micState = 'stopping';
+          clearTimeout(self._micRestartTimer);
+          micBtn.classList.add('stopping');
+          micBtn.classList.remove('recording');
+          try { self._micRec.stop(); } catch(e) { cleanup(); }
+        }
+
+        function hardStop() {
+          self._micState = 'stopping';
+          clearTimeout(self._micRestartTimer);
+          try { self._micRec.abort(); } catch(e) {}
+          cleanup();
+        }
+
+        function cleanup() {
+          self._micState = 'idle';
+          micBtn.classList.remove('recording', 'stopping');
+          micBtn.title = 'Dicter votre question';
+          const ta = document.getElementById('kwz-input');
+          if (ta) { ta.value = ta.value.trim(); ta.dispatchEvent(new Event('input')); ta.focus(); }
+        }
+
+        micBtn.addEventListener('click', function() {
+          if (self._micState === 'idle') start(); else stop();
+        });
+
+        const ta = document.getElementById('kwz-input');
+        if (ta) {
+          ta.addEventListener('keydown', function() {
+            if (self._micState !== 'idle') hardStop();
+          });
+        }
+      },
+
+      _getOrCreateMessages() {
+        let c = document.getElementById('messages');
+        if (!c) {
+          const area = document.getElementById('chat-area');
+          area.innerHTML = '<div class="messages" id="messages"></div>';
+          c = document.getElementById('messages');
+        }
+        return c;
+      },
+
+      _makeBubble(role, content, animate = true) {
+        if (role === 'user') {
+          const wrap = document.createElement('div');
+          wrap.className = 'chat-bubble-wrap user-wrap';
+          if (!animate) wrap.style.animation = 'none';
+          wrap.innerHTML = `
+            <div class="bubble-col" style="align-items:flex-end">
+              <div class="bubble-user">${this.escHtml(content)}</div>
+            </div>
+          `;
+          return wrap;
+        } else {
+          const wrap = document.createElement('div');
+          wrap.className = 'chat-bubble-wrap';
+          if (!animate) wrap.style.animation = 'none';
+          const col = document.createElement('div');
+          col.className = 'bubble-col';
+          const bubble = document.createElement('div');
+          bubble.className = 'ai-msg';
+          bubble.innerHTML = this.renderMd(content);
+          const actions = document.createElement('div');
+          actions.className = 'bubble-actions';
+          const copyBtn = document.createElement('button');
+          copyBtn.className = 'bubble-action-btn';
+          copyBtn.innerHTML = '<i class="far fa-copy"></i> Copier';
+          copyBtn.onclick = () => {
+            navigator.clipboard.writeText(content).then(() => {
+              copyBtn.innerHTML = '<i class="fas fa-check"></i> Copié';
+              setTimeout(() => { copyBtn.innerHTML = '<i class="far fa-copy"></i> Copier'; }, 2000);
+            });
+          };
+          actions.appendChild(copyBtn);
+          col.appendChild(bubble);
+          col.appendChild(actions);
+          wrap.innerHTML = '<div class="bubble-avatar ai-av"><i class="fas fa-wand-magic-sparkles"></i></div>';
+          wrap.appendChild(col);
+          return wrap;
+        }
+      },
+
+      _fillFromTyping() {
+        const ta = document.getElementById('kwz-input');
+        const el = document.getElementById('empty-typing-text');
+        if (!ta || !el || !el.textContent.trim()) return;
+        ta.value = el.textContent;
+        ta.focus();
+        ta.style.height = 'auto';
+        ta.style.height = ta.scrollHeight + 'px';
+      },
+
+      _startTypingAnim() {
+        const PHRASES = [
+          'Quels élèves ont le plus progressé ?',
+          'Quelles questions ont posé le plus de difficultés ?',
+          'Qui mérite des félicitations cette semaine ?',
+          'Quel point du cours revoir en priorité ?',
+          'Comment améliorer les résultats de la classe ?',
+          'Quels élèves ont besoin de soutien ?',
+          'Quelle est la question la mieux réussie ?',
+          'Résume les résultats du dernier quiz.',
+        ];
+        clearTimeout(this._typingTimer);
+        const el = document.getElementById('empty-typing-text');
+        if (!el) return;
+        let pi = 0, ci = 0, del = false;
+        const tick = () => {
+          if (!document.getElementById('empty-typing-text')) return;
+          const phrase = PHRASES[pi % PHRASES.length];
+          if (!del) {
+            ci++; el.textContent = phrase.slice(0, ci);
+            if (ci >= phrase.length) { del = true; this._typingTimer = setTimeout(tick, 2800); return; }
+            this._typingTimer = setTimeout(tick, 44);
+          } else {
+            ci--; el.textContent = phrase.slice(0, ci);
+            if (ci <= 0) { del = false; pi++; this._typingTimer = setTimeout(tick, 380); return; }
+            this._typingTimer = setTimeout(tick, 20);
+          }
+        };
+        this._typingTimer = setTimeout(tick, 650);
+      },
+
+      _scroll() {
+        const area = document.getElementById('chat-area');
+        if (area) area.scrollTop = area.scrollHeight;
+      },
+
+      _autoScroll() {
+        const area = document.getElementById('chat-area');
+        if (!area) return;
+        if (area.scrollHeight - area.scrollTop - area.clientHeight < 130)
+          area.scrollTop = area.scrollHeight;
+      },
+
+      _buildSystemPrompt() {
+        const ctx = this.context;
+        let ctxSection = '';
+        if (ctx) {
+          const ctxStr = typeof ctx === 'string' ? ctx : JSON.stringify(ctx, null, 2);
+          ctxSection = `\n\n══ DONNÉES DE CLASSE ══\n${ctxStr.slice(0, 8000)}\n══════════════════════`;
+        }
+        return `Tu es Kwizy AI, un assistant pédagogique expert pour les enseignants.
+Tu analyses les résultats des élèves, identifies les points forts et les difficultés, et proposes des pistes d'amélioration concrètes.
+
+RÈGLES :
+• Réponds en français, de façon claire et bienveillante.
+• Base-toi uniquement sur les données fournies. Si une info manque, dis-le.
+• Propose des actions concrètes et réalisables pour l'enseignant.
+• Style : concis, structuré, ~150-250 mots. Utilise des listes quand c'est utile.
+• Ne termine JAMAIS par une signature ou mention de ton nom (ex : "Kwizy AI", "Assistant pédagogique", etc.).
+• Si le message est une salutation ou une question hors-sujet, réponds naturellement et brièvement sans forcer le format pédagogique.${ctxSection}`;
+      },
+
+      async send() {
+        const ta = document.getElementById('kwz-input');
+        if (!ta) return;
+        const query = ta.value.trim();
+        if (!query || this.busy) return;
+
+        clearTimeout(this._typingTimer);
+        const apiKey = pickApiKey();
+
+        this.messages.push({ role: 'user', content: query });
+        ta.value = ''; ta.style.height = 'auto';
+        this.busy = true;
+
+        const container = this._getOrCreateMessages();
+        container.appendChild(this._makeBubble('user', query));
+        this._scroll();
+
+        // Thinking indicator
+        const thinkingEl = createThinkingEl();
+        thinkingEl.id = 'thinking-indicator';
+        container.appendChild(thinkingEl);
+        this._scroll();
+
+        // Disable input
+        const inputEl = document.getElementById('kwz-input');
+        const sendBtn = document.querySelector('.btn-send');
+        if (inputEl) inputEl.disabled = true;
+        if (sendBtn) sendBtn.disabled = true;
+
+        this._streamController = new AbortController();
+        const signal = this._streamController.signal;
+
+        try {
+          const history = this.messages.slice(0, -1).map(m => ({
+            role: m.role, content: m.content
+          }));
+          const messages = [
+            { role: 'system', content: this._buildSystemPrompt() },
+            ...history,
+            { role: 'user', content: query }
+          ];
+
+          // Remove thinking indicator
+          thinkingEl._clearThinking?.();
+          thinkingEl.remove();
+
+          // Create AI bubble with thinking block
+          const aiWrap = document.createElement('div');
+          aiWrap.className = 'chat-bubble-wrap';
+          const aiAvEl = document.createElement('div');
+          aiAvEl.className = 'bubble-avatar ai-av';
+          aiAvEl.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i>';
+
+          const aiCol = document.createElement('div');
+          aiCol.className = 'bubble-col';
+
+          // Thinking block (hidden until thinking arrives)
+          const thinkBlock = document.createElement('div');
+          thinkBlock.className = 'ai-think-block collapsed hidden-if-empty';
+          thinkBlock.innerHTML =
+            '<button class="ai-think-toggle" type="button">' +
+            '<span class="ai-think-dot"></span>' +
+            '<span class="ai-think-label">A réfléchi <span class="ai-think-status">…</span></span>' +
+            '<i class="fas fa-chevron-right ai-think-chevron"></i>' +
+            '</button>' +
+            '<div class="ai-think-content"></div>';
+          const thinkContent = thinkBlock.querySelector('.ai-think-content');
+          const thinkStatus = thinkBlock.querySelector('.ai-think-status');
+          thinkBlock.querySelector('.ai-think-toggle').addEventListener('click', () => {
+            thinkBlock.classList.toggle('collapsed');
+          });
+
+          const streamBubble = document.createElement('div');
+          streamBubble.className = 'ai-msg';
+          const streamBody = document.createElement('span');
+          const streamCursor = document.createElement('span');
+          streamCursor.className = 'stream-cursor';
+          streamBubble.appendChild(streamBody);
+          streamBubble.appendChild(streamCursor);
+
+          aiCol.appendChild(thinkBlock);
+          aiCol.appendChild(streamBubble);
+          aiWrap.appendChild(aiAvEl);
+          aiWrap.appendChild(aiCol);
+          container.appendChild(aiWrap);
+          this._scroll();
+
+          // Stream with thinking
+          let thinkingText = '', thinkStartTime = 0, thinkTimer = null;
+          let fullText = '', prevLen = 0;
+
+          const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: 'magistral-medium-latest',
+              messages,
+              stream: true,
+              max_tokens: 4096,
+              temperature: 1
+            }),
+            signal
+          });
+
+          if (!res.ok) {
+            const errText = await res.text();
+            let errMsg = `Erreur API Mistral (${res.status})`;
+            try { const j = JSON.parse(errText); errMsg = j.message || errMsg; } catch(_) {}
+            if (res.status === 401) {
+              localStorage.removeItem('kwizy-mistral-key');
+              errMsg = 'Clé API invalide. Cliquez sur "Configurer" pour en saisir une nouvelle.';
+            }
+            throw new Error(errMsg);
+          }
+
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buf = '';
+
+          try {
+            while (true) {
+              if (signal?.aborted) break;
+              let done, value;
+              try { ({ done, value } = await reader.read()); }
+              catch(e) { if (e.name === 'AbortError' || signal?.aborted) break; throw e; }
+              if (done) break;
+              buf += decoder.decode(value, { stream: true });
+              const lines = buf.split('\n');
+              buf = lines.pop();
+              for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const raw = line.slice(6).trim();
+                if (raw === '[DONE]') continue;
+                try {
+                  const j = JSON.parse(raw);
+                  const deltaRaw = j.choices?.[0]?.delta?.content;
+                  if (deltaRaw !== null && deltaRaw !== undefined) {
+                    if (typeof deltaRaw === 'string') {
+                      if (deltaRaw) { fullText += deltaRaw; }
+                    } else {
+                      const blocks = Array.isArray(deltaRaw) ? deltaRaw : [deltaRaw];
+                      for (const block of blocks) {
+                        if (block.type === 'text' && block.text) {
+                          fullText += block.text;
+                        } else if (block.type === 'thinking') {
+                          const parts = Array.isArray(block.thinking) ? block.thinking : [block.thinking];
+                          const chunk = parts.map(p => typeof p === 'string' ? p : (p?.text || '')).join('');
+                          if (chunk) {
+                            thinkingText += chunk;
+                            thinkContent.textContent = thinkingText;
+                            thinkContent.scrollTop = thinkContent.scrollHeight;
+                            if (thinkBlock.classList.contains('hidden-if-empty')) {
+                              thinkStartTime = Date.now();
+                              thinkBlock.classList.remove('hidden-if-empty', 'collapsed');
+                              thinkBlock.classList.add('thinking-active');
+                              thinkTimer = setInterval(() => {
+                                const secs = Math.floor((Date.now() - thinkStartTime) / 1000);
+                                const tokens = Math.ceil(thinkingText.length / 3.5);
+                                if (thinkStatus) thinkStatus.textContent = secs + 's · ~' + tokens + ' tok';
+                              }, 250);
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                  // Alt format
+                  const thinkDelta = j.choices?.[0]?.delta?.thinking;
+                  if (thinkDelta && typeof thinkDelta === 'string') {
+                    thinkingText += thinkDelta;
+                    thinkContent.textContent = thinkingText;
+                    thinkContent.scrollTop = thinkContent.scrollHeight;
+                    if (thinkBlock.classList.contains('hidden-if-empty')) {
+                      thinkStartTime = Date.now();
+                      thinkBlock.classList.remove('hidden-if-empty', 'collapsed');
+                      thinkBlock.classList.add('thinking-active');
+                      thinkTimer = setInterval(() => {
+                        const secs = Math.floor((Date.now() - thinkStartTime) / 1000);
+                        if (thinkStatus) thinkStatus.textContent = secs + 's';
+                      }, 250);
+                    }
+                  }
+                } catch(_) {}
+
+                // Update streaming text
+                if (fullText.length > prevLen) {
+                  const delta = fullText.slice(prevLen);
+                  prevLen = fullText.length;
+                  (delta.match(/\S+|\s+/g) || [delta]).forEach(tok => {
+                    const sp = document.createElement('span');
+                    sp.textContent = tok;
+                    streamBody.appendChild(sp);
+                  });
+                  this._autoScroll();
+                }
+              }
+            }
+          } finally {
+            try { reader.cancel(); } catch(_) {}
+          }
+
+          // Finalize thinking block
+          clearInterval(thinkTimer);
+          thinkBlock.classList.remove('thinking-active', 'hidden-if-empty');
+          thinkBlock.classList.add('collapsed');
+          if (thinkingText) {
+            const secs = Math.round((Date.now() - thinkStartTime) / 1000);
+            if (thinkStatus) thinkStatus.textContent = secs > 0 ? secs + 's' : '';
+          } else {
+            if (thinkStatus) thinkStatus.textContent = '—';
+            thinkContent.textContent = 'Réponse directe.';
+          }
+
+          streamCursor.remove();
+          streamBubble.innerHTML = this.renderMd(fullText);
+
+          // Copy button
+          const actions = document.createElement('div');
+          actions.className = 'bubble-actions';
+          const copyBtn = document.createElement('button');
+          copyBtn.className = 'bubble-action-btn';
+          copyBtn.innerHTML = '<i class="far fa-copy"></i> Copier';
+          copyBtn.onclick = () => {
+            navigator.clipboard.writeText(fullText).then(() => {
+              copyBtn.innerHTML = '<i class="fas fa-check"></i> Copié';
+              setTimeout(() => { copyBtn.innerHTML = '<i class="far fa-copy"></i> Copier'; }, 2000);
+            });
+          };
+          actions.appendChild(copyBtn);
+          aiCol.appendChild(actions);
+
+          this.messages.push({ role: 'assistant', content: fullText });
+
+        } catch(err) {
+          // Remove leftover thinking indicator
+          document.getElementById('thinking-indicator')?._clearThinking?.();
+          document.getElementById('thinking-indicator')?.remove();
+
+          if (err.name !== 'AbortError') {
+            const container2 = this._getOrCreateMessages();
+            const errWrap = document.createElement('div');
+            errWrap.className = 'chat-bubble-wrap';
+            errWrap.innerHTML = `
+              <div class="bubble-avatar ai-av"><i class="fas fa-wand-magic-sparkles"></i></div>
+              <div class="bubble-col"><div class="ai-msg" style="color:#ef4444">❌ ${this.escHtml(err.message || 'Erreur de communication avec l\'IA.')}</div></div>
+            `;
+            container2.appendChild(errWrap);
+            this._scroll();
+          }
+        } finally {
+          this._streamController = null;
+          this.busy = false;
+          const inputEl2 = document.getElementById('kwz-input');
+          const sendBtn2 = document.querySelector('.btn-send');
+          if (inputEl2) { inputEl2.disabled = false; inputEl2.focus(); }
+          if (sendBtn2) sendBtn2.disabled = false;
+        }
+      }
+    };
+
+    // ─── Boot ────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      Widget.render();
+    });
+
+    // ─── Context from parent ──────────────────────────────────────────────────
+    window.addEventListener('message', (ev) => {
+      try {
+        if (!ev.data || ev.data.type !== 'mistral-context') return;
+        Widget.context = ev.data.context || {};
+      } catch(_) {}
+    }, false);
+
+    // ─── Context from URL param ───────────────────────────────────────────────
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const c = params.get('context');
+      if (c) Widget.context = JSON.parse(decodeURIComponent(c));
+    } catch(_) {}
+  </script>
+</body>
+</html>

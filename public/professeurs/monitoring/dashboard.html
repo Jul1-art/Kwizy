@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="fr" class="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kwizy — Dashboard</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&display=swap"
+    rel="stylesheet">
+
+  <!-- Icons & Manifest -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="icon" type="image/png" id="favicon-link">
+  <link rel="manifest" id="manifest-link">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    :root {
+      --primary: #1C1C1C;
+      --secondary: #0070FF;
+      --surface: #f8f9fa;
+      --surface-dim: #f1f3f5;
+      --card: #ffffff;
+      --border: rgba(0, 0, 0, 0.06);
+      --muted: #888;
+      --green: #10b981;
+      --red: #ef4444;
+      --orange: #f59e0b;
+      --indigo: #6366f1;
+    }
+
+    .dark {
+      --primary: #ffffff;
+      --secondary: #0070FF;
+      --surface: #0a0a0a;
+      --surface-dim: #151515;
+      --card: #111111;
+      --border: rgba(255, 255, 255, 0.08);
+      --muted: #666;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--surface);
+      color: var(--primary);
+      min-height: 100vh;
+      transition: background 0.3s ease, color 0.3s;
+    }
+
+    /* Suppression du mesh gradient pour cohérence avec professeurs.html */
+
+    /* ---- TOPBAR ---- */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 1.5rem 2rem;
+      z-index: 1000;
+      background: var(--surface);
+    }
+
+    .dark .topbar {
+      background: #0a0a0a;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 1.5rem;
+    }
+
+    .end-session-btn {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--red);
+      border: 1px solid var(--red);
+      padding: 0.6rem 1.2rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .end-session-btn:hover {
+      background: var(--red);
+      color: white;
+    }
+
+    .topbar-logo {
+      grid-column: 2;
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--primary);
+      text-align: center;
+    }
+
+    .back-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      transition: all 0.25s ease;
+    }
+
+    .back-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+      border-color: var(--secondary);
+      color: var(--secondary);
+      transform: translateX(-4px);
+    }
+
+    .dark .back-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .theme-toggle-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+    }
+
+    .theme-toggle-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .dark .theme-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* ---- MAIN CONTENT ---- */
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 7rem 2rem 5rem;
+    }
+
+    /* ---- HEADER INFO ---- */
+    .dashboard-header {
+      margin-bottom: 3.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    .title-group {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .page-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.5rem, 5vw, 3.5rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    .live-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--secondary);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      font-size: 0.65rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      box-shadow: 0 10px 25px rgba(0, 112, 255, 0.3);
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-5px);
+      }
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+
+    .stat-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 0.75rem 1.25rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    }
+
+    .stat-label {
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .stat-val {
+      font-size: 1rem;
+      font-weight: 900;
+      color: var(--primary);
+    }
+
+    .stat-icon {
+      color: var(--secondary);
+      opacity: 0.8;
+    }
+
+    /* ---- NOTIFICATIONS ---- */
+    #notif-area {
+      position: fixed;
+      top: 6rem;
+      right: 2rem;
+      z-index: 5000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-width: 380px;
+    }
+
+    .notif {
+      background: rgba(239, 68, 68, 0.95);
+      backdrop-filter: blur(12px);
+      color: white;
+      padding: 1.25rem 1.5rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      box-shadow: 0 15px 40px rgba(239, 68, 68, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      animation: notifSlide 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    @keyframes notifSlide {
+      from {
+        opacity: 0;
+        transform: translateX(50px) scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+    }
+
+    /* ---- STUDENT GRID ---- */
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .student-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.75rem;
+      transition: all 0.2s ease;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .student-card:hover {
+      background: var(--surface-dim);
+      border-color: var(--secondary);
+    }
+
+    .dark .student-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .student-card.locked {
+      background: rgba(239, 68, 68, 0.05);
+      border-color: var(--red);
+      animation: pulseRedCard 2s ease-in-out infinite;
+    }
+
+    .student-card.disconnected {
+      background: rgba(100, 116, 139, 0.05);
+      border-color: #94a3b8;
+      opacity: 0.7;
+    }
+
+    @keyframes pulseRedCard {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+      }
+
+      50% {
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.15);
+      }
+    }
+
+    .student-card.done {
+      border-color: var(--secondary);
+    }
+
+    .cheat-log {
+      margin-top: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .cheat-log-entry {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--red);
+      opacity: 0.75;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .suspect-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(148, 163, 184, 0.12);
+      color: #64748b;
+      padding: 0.5rem 0.75rem;
+      border-radius: 10px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      margin-top: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .unlock-btn {
+      width: 100%;
+      margin-top: 1.25rem;
+      padding: 0.85rem;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      font-weight: 800;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.25);
+    }
+
+    .unlock-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 25px rgba(239, 68, 68, 0.35);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .avatar-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: var(--secondary);
+      border: 1px solid var(--border);
+    }
+
+    .student-info {
+      flex: 1;
+      margin-left: 1rem;
+    }
+
+    .name {
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+    }
+
+    .class {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-top: 0.1rem;
+    }
+
+    .live-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      position: relative;
+    }
+
+    .live-indicator.online::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      background: var(--secondary);
+      opacity: 0.4;
+      animation: ping 1.5s infinite;
+    }
+
+    @keyframes ping {
+      0% {
+        transform: scale(1);
+        opacity: 0.4;
+      }
+
+      100% {
+        transform: scale(2.5);
+        opacity: 0;
+      }
+    }
+
+    .indicator-green {
+      background: var(--secondary);
+    }
+
+    .indicator-red {
+      background: var(--red);
+    }
+
+    .indicator-gray {
+      background: #cbd5e1;
+    }
+
+    .progress-section {
+      margin-top: 1.5rem;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.6rem;
+    }
+
+    .progress-pct {
+      font-size: 0.7rem;
+      font-weight: 900;
+      color: var(--secondary);
+    }
+
+    .progress-steps {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: var(--muted);
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--surface);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--secondary);
+      border-radius: 10px;
+      transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(0, 112, 255, 0.1);
+      color: var(--secondary);
+      padding: 0.5rem 0.85rem;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 900;
+      margin-top: 1rem;
+    }
+
+    .cheat-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--red);
+      padding: 0.5rem 0.75rem;
+      border-radius: 10px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      margin-top: 1rem;
+      text-transform: uppercase;
+    }
+
+    .action-btn {
+      width: 100%;
+      margin-top: 1.25rem;
+      padding: 0.85rem;
+      border-radius: 14px;
+      border: none;
+      background: var(--red);
+      color: white;
+      font-weight: 800;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
+    }
+
+    .action-btn:hover {
+      background: #dc2626;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 25px rgba(239, 68, 68, 0.3);
+    }
+
+    /* ---- EMPTY STATE ---- */
+    .empty-container {
+      text-align: center;
+      padding: 6rem 2rem;
+      background: var(--card);
+      border: 1px dashed var(--border);
+      border-radius: 32px;
+      color: var(--muted);
+    }
+
+    .empty-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 24px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 2rem;
+      color: var(--secondary);
+    }
+
+    .empty-title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .empty-desc {
+      font-size: 0.9rem;
+      max-width: 320px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ---- MODAL ---- */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px);
+      z-index: 5000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-window {
+      background: var(--surface);
+      border-radius: 32px;
+      width: 95vw;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .modal-header {
+      padding: 1.5rem 3rem;
+      background: var(--card);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 900;
+    }
+
+    .close-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.3s;
+    }
+
+    .close-btn:hover {
+      background: var(--red);
+      color: white;
+      border-color: var(--red);
+    }
+
+    .modal-body {
+      padding: 4rem;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .exam-copy {
+      width: 100%;
+      max-width: 800px;
+      background: white;
+      border-radius: 4px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+      padding: 5rem;
+      border: 1px solid #e2e8f0;
+      position: relative;
+    }
+
+    .dark .exam-copy {
+      background: #111;
+      border-color: #333;
+    }
+
+    .copy-header {
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 2rem;
+      margin-bottom: 4rem;
+    }
+
+    .copy-student-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 900;
+    }
+
+    .copy-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .question-block {
+      margin-bottom: 4rem;
+    }
+
+    .q-num {
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: var(--secondary);
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .q-text {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      line-height: 1.4;
+    }
+
+    .option-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .option-item {
+      padding: 1.25rem 1.5rem;
+      border-radius: 12px;
+      border: 1.5px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+
+    .dark .option-item {
+      border-color: #222;
+    }
+
+    .option-item.selected {
+      border-color: var(--secondary);
+      background: rgba(0, 112, 255, 0.05);
+    }
+
+    .option-item.correct {
+      border-color: var(--secondary);
+      background: rgba(0, 112, 255, 0.05);
+    }
+
+    .opt-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 900;
+    }
+
+    .dark .opt-circle {
+      border-color: #333;
+    }
+
+    .selected .opt-circle {
+      border-color: var(--secondary);
+      color: var(--secondary);
+      background: rgba(0, 112, 255, 0.1);
+    }
+
+    .correct .opt-circle {
+      border-color: var(--secondary);
+      color: var(--secondary);
+      background: rgba(0, 112, 255, 0.1);
+    }
+
+    .wrong .opt-circle {
+      border-color: var(--red);
+      color: var(--red);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .open-answer {
+      padding: 2rem;
+      background: #f8fafc;
+      border-radius: 12px;
+      font-weight: 600;
+      line-height: 1.6;
+      border-left: 4px solid var(--border);
+    }
+
+    .dark .open-answer {
+      background: #1a1a1a;
+    }
+
+    /* ---- RESULTS ---- */
+    #results-area {
+      margin-top: 5rem;
+      animation: fadeInUp 1s ease;
+    }
+
+    .results-card {
+      background: var(--card);
+      border-radius: 32px;
+      padding: 3rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.02);
+    }
+
+    .results-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 900;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin-bottom: 2.5rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      text-align: left;
+      padding: 1rem;
+      font-size: 0.65rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      border-bottom: 2px solid var(--border);
+    }
+
+    td {
+      padding: 1.25rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .avg-section {
+      background: linear-gradient(135deg, var(--secondary), #6366f1);
+      padding: 2.5rem;
+      border-radius: 24px;
+      color: white;
+      text-align: center;
+    }
+
+    .avg-val {
+      font-size: 4rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .avg-label {
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      opacity: 0.8;
+    }
+
+    @media (max-width: 640px) {
+      .topbar {
+        padding: 1rem;
+      }
+
+      main {
+        padding: 6rem 1.25rem 3rem;
+      }
+
+      .dashboard-header {
+        margin-bottom: 2.5rem;
+      }
+
+      .page-title {
+        font-size: 2.2rem;
+      }
+
+      .grid-container {
+        grid-template-columns: 1fr;
+      }
+
+      .results-card {
+        padding: 1.5rem;
+      }
+    }
+
+    .launch-btn {
+      background: var(--secondary);
+      color: white;
+      border: none;
+      padding: 0.7rem 1.4rem;
+      border-radius: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0 4px 12px rgba(0, 112, 255, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .launch-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 112, 255, 0.3);
+    }
+
+    .launch-btn:active {
+      transform: translateY(0);
+    }
+
+    .launch-btn i {
+      font-size: 0.8rem;
+    }
+
+    .launch-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .session-status-badge {
+      display: inline-flex;
+      align-items: center;
+      align-self: center;
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .session-status-badge.waiting {
+      background: rgba(245, 158, 11, 0.12);
+      color: var(--orange);
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .session-status-badge.live {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--green);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    /* ---- Tablette uniquement : dézoom à 80% ---- */
+    @media (min-width: 768px) and (max-width: 1279px) {
+      body {
+        zoom: 0.80;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Notification Overlay -->
+  <div id="notif-area"></div>
+
+  <!-- Top Navigation -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="../professeurs.html" class="back-btn" title="Retour au tableau de bord">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+    </div>
+    <a href="../../index.html" class="topbar-logo">Kwizy</a>
+    <div class="topbar-right">
+      <button onclick="endSession()" class="end-session-btn">Terminer la session</button>
+      <button class="theme-toggle-btn" id="theme-toggle">
+        <i class="fas fa-moon" id="theme-icon"></i>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Header: Title & Meta -->
+    <div class="dashboard-header">
+      <div class="title-group">
+        <h1 class="page-title" id="quiz-title">Dashboard Live</h1>
+        <div class="stats-row">
+          <span id="session-status-badge" class="session-status-badge waiting" style="margin-right: 0.75rem;">En
+            attente</span>
+          <button class="launch-btn" id="start-quiz-btn" onclick="startQuizAction()"
+            style="display: none; margin-top: auto; margin-bottom: auto; margin-right: 1rem;">
+            <i class="fas fa-play"></i> Démarrer le Quiz
+          </button>
+          <div class="stat-badge" style="cursor: pointer; transition: transform 0.2s;"
+            onclick="document.getElementById('fullscreen-code-modal').style.display='flex'"
+            title="Afficher en plein écran">
+            <div>
+              <p class="stat-label">Code d'accès</p>
+              <p class="stat-val" id="code-display">—</p>
+            </div>
+          </div>
+          <div class="stat-badge">
+            <div>
+              <p class="stat-label">Connectés</p>
+              <p class="stat-val" id="connected-count">0</p>
+            </div>
+          </div>
+          <div class="stat-badge">
+            <div>
+              <p class="stat-label">Terminé</p>
+              <p class="stat-val" id="done-count">0</p>
+            </div>
+          </div>
+          <div class="stat-badge" style="cursor: pointer; transition: transform 0.2s;" onclick="toggleSortMode()"
+            title="Trier les élèves">
+            <div>
+              <p class="stat-label">Trier</p>
+              <p class="stat-val"><i class="fas fa-sort-alpha-down" id="sort-icon"></i></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Grid -->
+    <div id="students-grid" class="grid-container">
+      <!-- Skeleton or dynamic content here -->
+      <div class="empty-container" id="students-empty-state">
+        <h3 class="empty-title">En attente des élèves...</h3>
+        <p class="empty-desc" id="students-empty-desc">Les élèves apparaîtront ici en temps réel dès qu'ils rejoindront
+          la session avec le code. Cliquez sur <strong>Démarrer le Quiz</strong> quand tout le monde est prêt.</p>
+      </div>
+    </div>
+
+    <!-- Final Results Section -->
+    <div id="results-area" style="display:none;">
+      <div class="results-card">
+        <h2 class="results-title">Bilan de Session</h2>
+
+        <div class="table-wrap">
+          <table id="results-table">
+            <thead>
+              <tr>
+                <th>Élève</th>
+                <th>Classe</th>
+                <th style="text-align:center">Score</th>
+                <th style="text-align:center">Succès</th>
+                <th style="text-align:center">Soumission</th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="avg-section">
+          <p class="avg-label">Moyenne de la classe</p>
+          <div class="avg-val" id="class-average">0%</div>
+          <p
+            style="font-size:0.7rem;opacity:0.6;margin-top:1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;">
+            Analyses détaillées archivées pour 30 jours</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Fullscreen Code Modal -->
+  <div class="modal-backdrop" id="fullscreen-code-modal"
+    style="display: none; align-items: center; justify-content: center; z-index: 9999;"
+    onclick="this.style.display='none'">
+    <div
+      style="font-size: 20vw; font-weight: 900; color: white; letter-spacing: 0.1em; text-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+      <span id="giant-code-display"></span>
+    </div>
+  </div>
+
+  <!-- End Session Confirm Modal -->
+  <div class="modal-backdrop" id="end-session-modal"
+    style="display: none; align-items: center; justify-content: center; z-index: 8000;">
+    <div class="modal-window" style="text-align: center; max-width: 450px; padding: 3rem;">
+      <i data-lucide="alert-triangle" size="48" style="color: var(--red); margin-bottom: 1rem;"></i>
+      <h2 style="font-weight: 900; margin-bottom: 1rem; color: var(--primary);">Attention</h2>
+      <p id="end-session-msg" style="color: var(--muted); margin-bottom: 2rem; line-height: 1.5; font-size: 1rem;"></p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button onclick="document.getElementById('end-session-modal').style.display='none'"
+          style="padding: 0.8rem 1.5rem; border-radius: 12px; background: var(--surface); color: var(--primary); border: 1px solid var(--border); font-weight: 800; cursor: pointer;">Annuler</button>
+        <button onclick="confirmEndSession()"
+          style="padding: 0.8rem 1.5rem; border-radius: 12px; background: var(--red); color: white; border: none; font-weight: 800; cursor: pointer;">Mettre
+          fin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-backdrop" id="student-modal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-student-name">Performance Élève</h2>
+        <button class="close-btn" onclick="closeModal()"><i data-lucide="x" size="20"></i></button>
+      </div>
+      <div class="modal-body" id="modal-content"></div>
+    </div>
+  </div>
+
+  <script>
+    // ---- INITIALIZATION ----
+    const getAppRoot = () => {
+      const path = window.location.pathname;
+      if (path.includes('/public/professeurs/monitoring/')) return '../../../';
+      if (path.includes('/professeurs/monitoring/')) return '../../';
+      return './';
+    };
+
+    const apiFetch = async (url, options = {}) => {
+      const token = localStorage.getItem('kwizyToken');
+      let finalUrl = url;
+
+      // Si l'url commence par API_ROOT, on ajuste dynamiquement
+      if (url.startsWith('API_ROOT/')) {
+        finalUrl = getAppRoot() + 'api/v1/' + url.replace('API_ROOT/', '');
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(finalUrl, { ...options, headers });
+      if (res.status === 401) {
+        window.location.href = (getAppRoot() === './' ? '' : '../') + 'inscription.html';
+        return null;
+      }
+      return res;
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const root = getAppRoot();
+      // Ajustement dynamique des liens du head
+      document.getElementById('manifest-link').href = root + 'manifest.json';
+      document.getElementById('favicon-link').href = root + 'assets/icon-192.png';
+
+      lucide.createIcons();
+      const saved = localStorage.getItem('kwizySession');
+      if (!saved) {
+        window.location.href = '../inscription.html';
+        return;
+      }
+      initApp();
+    });
+
+    // ---- THEME ----
+    let currentTheme = localStorage.getItem('kwizyTheme') || 'light';
+    function applyTheme(t) {
+      document.documentElement.className = t;
+      currentTheme = t;
+      localStorage.setItem('kwizyTheme', t);
+      const icon = document.getElementById('theme-icon');
+      if (icon) {
+        icon.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+      }
+    }
+    applyTheme(currentTheme);
+    document.getElementById('theme-toggle').onclick = () => applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+
+    // ---- STATE MANAGEMENT ----
+    const params = new URLSearchParams(window.location.search);
+    const quizCode = params.get('code') || '';
+    const quizTitle = params.get('title') || 'Quiz';
+
+    let studentsMap = {};
+    let resultsMap = {};
+    let prevLocked = new Set();
+    let currentQuiz = null;
+    let quizSessionStatus = 'publie';
+
+    const quizzesRaw = sessionStorage.getItem('kwizyMonitorQuiz');
+    if (quizzesRaw) { try { currentQuiz = JSON.parse(quizzesRaw); } catch (e) { } }
+
+    function initApp() {
+      document.getElementById('quiz-title').textContent = quizTitle;
+      document.getElementById('code-display').textContent = quizCode;
+      document.getElementById('giant-code-display').textContent = quizCode;
+
+      if (!quizCode) {
+        document.getElementById('students-grid').innerHTML = `
+          <div class="empty-container">
+            <div class="empty-icon" style="color:var(--red)"><i data-lucide="alert-triangle" size="32"></i></div>
+            <h3 class="empty-title">Session introuvable</h3>
+            <p class="empty-desc">Aucun code de quiz n'a été spécifié. Retournez au tableau de bord pour lancer une session.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      poll();
+      setInterval(poll, 2000); // Polling 2s : quasi-temps-réel
+    }
+
+
+
+    // ---- SESSION MANAGEMENT ----
+    let sortMode = 'alpha'; // alpha, progress, cheat
+
+    function toggleSortMode() {
+      const modes = ['alpha', 'progress', 'cheat'];
+      let idx = modes.indexOf(sortMode);
+      sortMode = modes[(idx + 1) % modes.length];
+      let icon = 'fa-sort';
+      if (sortMode === 'alpha') icon = 'fa-sort-alpha-down';
+      else if (sortMode === 'progress') icon = 'fa-sort-amount-down';
+      else if (sortMode === 'cheat') icon = 'fa-exclamation-triangle';
+      document.getElementById('sort-icon').className = `fas ${icon}`;
+      renderStudents();
+    }
+
+    async function endSession() {
+      const ids = Object.keys(studentsMap);
+      const notDone = ids.filter(id => studentsMap[id].status !== 'done' && !resultsMap[id]);
+
+      if (notDone.length > 0) {
+        document.getElementById('end-session-msg').innerHTML = `<b>${notDone.length} élève(s)</b> n'ont pas encore terminé leur évaluation.<br><br>Êtes-vous sûr de vouloir forcer la fin de la session ?`;
+        document.getElementById('end-session-modal').style.display = 'flex';
+      } else {
+        document.getElementById('end-session-msg').innerHTML = `Voulez-vous vraiment terminer la session ? Cela déconnectera tous les élèves.`;
+        document.getElementById('end-session-modal').style.display = 'flex';
+      }
+    }
+
+    function updateSessionStatusUI(status) {
+      quizSessionStatus = status || 'publie';
+      const badge = document.getElementById('session-status-badge');
+      const startBtn = document.getElementById('start-quiz-btn');
+      const emptyDesc = document.getElementById('students-empty-desc');
+
+      if (badge) {
+        if (quizSessionStatus === 'lance') {
+          badge.textContent = 'En cours';
+          badge.className = 'session-status-badge live';
+        } else {
+          badge.textContent = 'En attente';
+          badge.className = 'session-status-badge waiting';
+        }
+      }
+
+      if (startBtn) {
+        startBtn.style.display = quizSessionStatus === 'publie' ? 'flex' : 'none';
+        if (quizSessionStatus === 'publie') {
+          startBtn.disabled = false;
+          startBtn.innerHTML = '<i class="fas fa-play"></i> Démarrer le Quiz';
+        }
+      }
+
+      if (emptyDesc) {
+        emptyDesc.innerHTML = quizSessionStatus === 'lance'
+          ? 'Le quiz est lancé. Les élèves peuvent commencer depuis leur écran d\'attente.'
+          : 'Les élèves apparaîtront ici dès qu\'ils rejoindront avec le code. Cliquez sur <strong>Démarrer le Quiz</strong> quand tout le monde est prêt.';
+      }
+    }
+
+    async function startQuizAction() {
+      const btn = document.getElementById('start-quiz-btn');
+      if (!quizCode) {
+        showNotif("Code de quiz manquant.");
+        return;
+      }
+      try {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Lancement...';
+        btn.disabled = true;
+
+        const res = await apiFetch(`API_ROOT/monitoring.php?action=start_session`, {
+          method: 'POST',
+          body: JSON.stringify({ code: quizCode })
+        });
+        if (!res) return;
+
+        const data = await res.json();
+        if (data.success) {
+          updateSessionStatusUI('lance');
+          showNotif("Quiz lancé ! Les élèves peuvent maintenant commencer.");
+          pollMonitor();
+        } else {
+          showNotif("Erreur: " + (data.message || 'Lancement impossible'));
+          btn.innerHTML = '<i class="fas fa-play"></i> Démarrer le Quiz';
+          btn.disabled = false;
+        }
+      } catch (e) {
+        showNotif("Erreur lors du lancement.");
+        btn.innerHTML = '<i class="fas fa-play"></i> Démarrer le Quiz';
+        btn.disabled = false;
+      }
+    }
+
+    async function confirmEndSession() {
+      try {
+        await apiFetch(`API_ROOT/monitoring.php?action=close_session`, {
+          method: 'POST',
+          body: JSON.stringify({ code: quizCode })
+        });
+        window.location.href = (getAppRoot() === './' ? '' : '../') + 'professeurs.html';
+      } catch (e) {
+        showNotif("Erreur lors de la fermeture de la session.");
+      }
+    }
+
+    // ---- DATA POLLING ----
+    function poll() {
+      pollMonitor();
+      pollResults();
+    }
+
+    async function pollMonitor() {
+      try {
+        const res = await apiFetch(`API_ROOT/monitoring.php?action=get_live_students&code=${encodeURIComponent(quizCode)}`);
+        if (!res) return;
+        const data = await res.json();
+        if (data.success) {
+          updateSessionStatusUI(data.quiz_status);
+          studentsMap = data.students || {};
+          renderStudents();
+        }
+      } catch (e) { }
+    }
+
+    async function pollResults() {
+      try {
+        const res = await apiFetch(`API_ROOT/monitoring.php?action=get_results&code=${quizCode}`);
+        if (!res) return;
+        const data = await res.json();
+        if (data.success && Array.isArray(data.sessions)) {
+          data.sessions.forEach(s => {
+            if (s.statut === 'termine') {
+              resultsMap[s.student_id] = {
+                score: s.score,
+                total: s.total_score,
+                submittedAt: new Date(s.created_at).toLocaleDateString('fr-FR')
+              };
+            }
+          });
+          updateResultsView();
+        }
+      } catch (e) { }
+    }
+
+    // ---- RENDERING ----
+    function renderStudents() {
+      const grid = document.getElementById('students-grid');
+      let ids = Object.keys(studentsMap);
+
+      if (sortMode === 'alpha') {
+        ids.sort((a, b) => (studentsMap[a].name || '').localeCompare(studentsMap[b].name || ''));
+      } else if (sortMode === 'progress') {
+        ids.sort((a, b) => {
+          const sA = studentsMap[a]; const sB = studentsMap[b];
+          const doneA = (sA.status === 'done' || resultsMap[a]) ? 1 : 0;
+          const doneB = (sB.status === 'done' || resultsMap[b]) ? 1 : 0;
+          if (doneA !== doneB) return doneB - doneA;
+          const pctA = (sA.currentQuestion || 0) / (sA.totalQuestions || 1);
+          const pctB = (sB.currentQuestion || 0) / (sB.totalQuestions || 1);
+          return pctB - pctA;
+        });
+      } else if (sortMode === 'cheat') {
+        ids.sort((a, b) => (studentsMap[b].cheats || 0) - (studentsMap[a].cheats || 0));
+      }
+
+      if (ids.length === 0) {
+        document.getElementById('connected-count').textContent = '0';
+        document.getElementById('done-count').textContent = '0';
+        grid.innerHTML = `<div class="empty-container">
+          <h3 class="empty-title">En attente des élèves...</h3>
+          <p class="empty-desc">Les élèves apparaîtront ici dès qu'ils rejoindront la session.</p>
+        </div>`;
+        return;
+      }
+
+      let connectedCount = 0;
+      let doneCount = 0;
+      let html = '';
+
+      // Seuil de déconnexion : 60s (plus tolérant que 12s)
+      const DISCONNECT_THRESHOLD = 60;
+
+      ids.forEach(id => {
+        const s = studentsMap[id];
+        const result = resultsMap[id];
+        const isDone = s.status === 'done' || !!resultsMap[id];
+        const isLocked = s.isLocked || s.status === 'locked';
+        const secAgo = typeof s.lastSeen === 'number' ? s.lastSeen : 999;
+        const isOnline = secAgo < DISCONNECT_THRESHOLD && !isDone;
+        const isDisconnected = !isDone && !isLocked && secAgo >= DISCONNECT_THRESHOLD;
+
+        if (isOnline || isDone) connectedCount++;
+        if (isDone) doneCount++;
+
+        // Notification prof si nouveau tricheur : alerte sonore + visuelle
+        if (isLocked && !prevLocked.has(id)) {
+          const reason = (s.cheatLog || []).slice(-1)[0]?.reason || 'sortie d\'onglet';
+          showNotif(`🚨 ${s.name} — ${reason.replace(/_/g, ' ')} !`);
+          // Bip sonore discret
+          try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const o = ctx.createOscillator(); const g = ctx.createGain();
+            o.connect(g); g.connect(ctx.destination);
+            o.frequency.value = 880; g.gain.setValueAtTime(0.3, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+            o.start(); o.stop(ctx.currentTime + 0.4);
+          } catch (e) { }
+          prevLocked.add(id);
+        }
+        if (!isLocked) prevLocked.delete(id);
+
+        // Couleur du point de statut
+        const dotStatus = (isOnline || isDone) ? 'online' : '';
+        const dotColor = isDone ? 'indicator-green'
+          : isLocked ? 'indicator-red'
+            : isOnline ? 'indicator-green'
+              : 'indicator-gray'; // gris = déconnecté/suspect
+
+        const qTotal = s.totalQuestions || 0;
+        const qCurrent = s.currentQuestion || 1;
+        const pct = isDone ? 100 : (qTotal > 0 ? Math.round(((qCurrent - 1) / qTotal) * 100) : 0);
+        const initials = (s.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        // On récupère le résultat si disponible
+        const studentResult = resultsMap[id] || (isDone && { score: s.score, total: s.total });
+
+        // Tooltip de statut
+        const statusTitle = isDone ? 'Terminé' : isLocked ? 'Tricheur — Verrouillé' : isDisconnected ? `Déconnecté (${secAgo}s)` : 'En ligne';
+
+        // Log de triche (3 derniers)
+        const cheatLog = (s.cheatLog || []).slice(-3);
+        const cheatLogHtml = cheatLog.length > 0 ? `
+          <div class="cheat-log">
+            ${cheatLog.map(e => `<div class="cheat-log-entry">⚡ ${e.time} — ${escHtml(e.reason?.replace(/_/g, ' ') || '?')}</div>`).join('')}
+          </div>` : '';
+
+        html += `
+          <div class="student-card ${isLocked ? 'locked' : ''} ${isDone ? 'done' : ''} ${isDisconnected ? 'disconnected' : ''}" onclick="openModal('${id}')">
+            <div class="card-top">
+              <div class="avatar-wrap">${initials}</div>
+              <div class="student-info">
+                <p class="name">${escHtml(s.name)}</p>
+                <p class="class">${escHtml(s.class || 'Sans classe')}</p>
+              </div>
+              <div class="live-indicator ${dotStatus} ${dotColor}" title="${statusTitle}"></div>
+            </div>
+
+            ${isDone ? `
+              <div class="score-badge"><span>${studentResult.score} / ${studentResult.total}</span></div>
+              <p style="font-size:0.65rem;font-weight:800;color:var(--muted);margin-top:0.75rem;text-transform:uppercase;">Quiz Terminé ✓</p>
+            ` : `
+              <div class="progress-section">
+                <div class="progress-info">
+                  <span class="progress-steps">Question ${qCurrent} sur ${qTotal || '?'}</span>
+                  <span class="progress-pct">${pct}%</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+              </div>
+            `}
+
+            ${s.cheats > 0 ? `
+              <div class="cheat-badge">
+                <i class="fas fa-exclamation-triangle" style="font-size:0.7rem;"></i>
+                ${s.cheats} ALERTE${s.cheats > 1 ? 'S' : ''}
+              </div>
+              ${cheatLogHtml}
+            ` : ''}
+
+            ${isDisconnected ? `
+              <div class="suspect-badge">
+                <i class="fas fa-wifi" style="opacity:0.5"></i>
+                Déconnecté · Suspect (${secAgo}s)
+              </div>
+            ` : ''}
+
+            ${isLocked ? `
+              <button class="unlock-btn" onclick="event.stopPropagation(); unlockStudent('${id}')">
+                <i class="fas fa-lock-open"></i> Libérer
+              </button>
+            ` : ''}
+          </div>
+        `;
+      });
+
+      if (html === '') {
+        grid.innerHTML = `<div class="empty-container">
+          <h3 class="empty-title">En attente des élèves...</h3>
+          <p class="empty-desc">Les élèves apparaîtront ici dès qu'ils rejoindront la session.</p>
+        </div>`;
+      } else {
+        grid.innerHTML = html;
+      }
+      document.getElementById('connected-count').textContent = connectedCount;
+      document.getElementById('done-count').textContent = doneCount;
+      lucide.createIcons();
+    }
+
+    async function unlockStudent(studentId) {
+      try {
+        await apiFetch(`API_ROOT/monitoring.php?action=unlock_student`, {
+          method: 'POST',
+          body: JSON.stringify({ code: quizCode, studentId })
+        });
+        prevLocked.delete(studentId);
+        if (studentsMap[studentId]) {
+          studentsMap[studentId].isLocked = false;
+          studentsMap[studentId].status = 'active';
+        }
+        renderStudents();
+        // Re-poll immédiat pour confirmer
+        setTimeout(pollMonitor, 300);
+      } catch (e) { }
+    }
+
+    function showNotif(msg) {
+      const area = document.getElementById('notif-area');
+      const n = document.createElement('div');
+      n.className = 'notif';
+      n.innerHTML = `<span>${msg}</span>`;
+      area.appendChild(n);
+      setTimeout(() => {
+        n.style.opacity = '0';
+        n.style.transform = 'translateX(50px) scale(0.9)';
+        setTimeout(() => n.remove(), 600);
+      }, 5000);
+    }
+
+    // ---- MODAL ----
+    function openModal(studentId) {
+      const s = studentsMap[studentId] || {};
+      const result = resultsMap[studentId];
+
+      const initials = (s.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+      let html = `
+        <div class="exam-copy">
+          <div class="copy-header">
+            <div class="copy-student-name">${escHtml(s.name)}</div>
+            <div class="copy-meta">
+              <span>Classe: ${escHtml(s.class || 'Inconnue')}</span>
+              <span>Score: ${result ? result.score + ' / ' + result.total : 'En cours'}</span>
+              <span>Date: ${result ? result.submittedAt : new Date().toLocaleDateString()}</span>
+            </div>
+          </div>
+      `;
+
+      const questions = currentQuiz?.questions || [];
+      const liveAnswers = s.answers || {};
+
+      // Construire un tableau unifié des réponses (soumises ou en direct)
+      let displayAnswers = [];
+      if (result && result.answers) {
+        displayAnswers = result.answers;
+      } else {
+        // En cours : on génère le même format depuis s.answers
+        questions.forEach((q, idx) => {
+          const userAns = liveAnswers[idx];
+          let isCorrect = null;
+          let displayValue = userAns;
+
+          if (userAns !== undefined && userAns !== null) {
+            if (q.type === 'MCQ') {
+              const correct = q.correctOptionIndex !== undefined ? q.correctOptionIndex : 0;
+              isCorrect = Number(userAns) === Number(correct);
+              displayValue = (q.options || [])[userAns] ?? '—';
+            } else if (q.type === 'TRUE_FALSE') {
+              const correct = q.correctOptionIndex === 0 ? 'true' : 'false';
+              isCorrect = String(userAns) === String(correct);
+              displayValue = userAns === 'true' ? 'Vrai' : (userAns === 'false' ? 'Faux' : '—');
+            } else {
+              displayValue = userAns;
+            }
+          }
+
+          displayAnswers.push({
+            value: displayValue !== undefined ? displayValue : null,
+            correct: isCorrect
+          });
+        });
+      }
+
+      if (displayAnswers.length > 0 && questions.length > 0) {
+        let currentIdx = (s.currentQuestion || 1) - 1;
+        if (result) currentIdx = questions.length; // Si terminé, tout afficher
+
+        displayAnswers.forEach((ans, i) => {
+          if (i > currentIdx) return; // Ne pas afficher les questions futures
+
+          const q = questions[i];
+          if (!q) return;
+
+          const isCurrent = (!result && i === currentIdx);
+          const isCorrect = ans.correct;
+          const hasAnswered = ans.value !== null && ans.value !== undefined;
+
+          let statusClass = '';
+          let icon = 'circle';
+          if (hasAnswered) {
+            statusClass = isCorrect === true ? 'correct' : (isCorrect === false ? 'wrong' : 'selected');
+            icon = isCorrect === true ? 'check' : (isCorrect === false ? 'x' : 'circle');
+          }
+
+          let borderStyle = isCurrent ? 'border: 2px solid var(--secondary); background: rgba(0,112,255,0.02);' : '';
+          let currentBadge = isCurrent ? `<div style="color:var(--secondary); font-size:0.75rem; font-weight:900; margin-bottom:0.75rem; text-transform:uppercase; display:flex; align-items:center; gap:0.4rem;"><i data-lucide="crosshair" size="16"></i> Question en cours</div>` : '';
+
+          html += `
+            <div class="question-block ${statusClass}" style="${borderStyle}">
+              ${currentBadge}
+              <span class="q-num">Question ${i + 1}</span>
+              <p class="q-text">${escHtml(q.text)}</p>
+          `;
+
+          if (q.type === 'MCQ' || q.type === 'TRUE_FALSE') {
+            html += `<div class="option-list">`;
+            const optionsToRender = q.type === 'TRUE_FALSE' ? ['Vrai', 'Faux'] : (q.options || []);
+
+            optionsToRender.forEach((opt, optIdx) => {
+              const optStr = String(opt);
+              const isStudentChoice = hasAnswered && String(ans.value) === optStr;
+
+              let isCorrectChoice = false;
+              if (q.type === 'MCQ') {
+                isCorrectChoice = optIdx === (q.correctOptionIndex !== undefined ? q.correctOptionIndex : 0);
+              } else {
+                isCorrectChoice = (q.correctOptionIndex === 0 && optStr === 'Vrai') || (q.correctOptionIndex === 1 && optStr === 'Faux');
+              }
+
+              let optClass = '';
+              if (isStudentChoice) optClass = isCorrect === false ? 'wrong' : 'selected';
+              if (isCorrectChoice && (!isCurrent || hasAnswered)) optClass = 'correct';
+
+              html += `
+                <div class="option-item ${optClass}">
+                  <div class="opt-circle">${isStudentChoice ? '<i data-lucide="' + icon + '" size="12"></i>' : ''}</div>
+                  <span>${escHtml(optStr)}</span>
+                </div>
+              `;
+            });
+            html += `</div>`;
+          } else {
+            html += `
+              <div class="open-answer" style="${!hasAnswered ? 'color: var(--muted); font-style: italic;' : ''}">
+                ${escHtml(String(ans.value || (hasAnswered ? '' : 'Pas encore de réponse')))}
+              </div>
+            `;
+          }
+          html += `</div>`;
+        });
+      } else {
+        html += `
+          <div style="text-align:center;padding:5rem 0;">
+            <p style="font-weight:900;font-size:1.5rem;">Aucune donnée disponible</p>
+          </div>
+        `;
+      }
+
+      html += `</div>`; // End exam-copy
+
+      document.getElementById('modal-content').innerHTML = html;
+      document.getElementById('student-modal').classList.add('active');
+      lucide.createIcons();
+    }
+
+    function closeModal() { document.getElementById('student-modal').classList.remove('active'); }
+    document.getElementById('student-modal').onclick = (e) => { if (e.target.id === 'student-modal') closeModal(); };
+
+    // ---- RESULTS PANEL ----
+    function updateResultsView() {
+      const allIds = Object.keys(studentsMap);
+      if (allIds.length === 0) return;
+      const allDone = allIds.every(id => !!resultsMap[id]);
+
+      if (allDone && allIds.length > 0) {
+        document.getElementById('results-area').style.display = 'block';
+        const tbody = document.getElementById('results-tbody');
+        const results = Object.values(resultsMap);
+
+        let totalPct = 0;
+        tbody.innerHTML = results.map(r => {
+          totalPct += r.percentage;
+          const colorClass = r.percentage >= 80 ? 'var(--secondary)' : (r.percentage >= 50 ? 'var(--orange)' : 'var(--red)');
+          return `
+            <tr>
+              <td>${escHtml(r.name)}</td>
+              <td style="color:var(--muted);font-size:0.75rem;">${escHtml(r.class || '—')}</td>
+              <td style="text-align:center">${r.score} / ${r.total}</td>
+              <td style="text-align:center;color:${colorClass}">${r.percentage}%</td>
+              <td style="text-align:center;color:var(--muted);font-size:0.75rem;">${r.submittedAt || '—'}</td>
+            </tr>
+          `;
+        }).join('');
+
+        const avg = Math.round(totalPct / results.length);
+        document.getElementById('class-average').textContent = avg + '%';
+      }
+    }
+
+    function escHtml(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  </script>
+</body>
+
+</html>

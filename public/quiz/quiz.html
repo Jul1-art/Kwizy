@@ -1,0 +1,2296 @@
+<!DOCTYPE html>
+<html lang="fr" class="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kwizy — Quiz</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Playfair+Display:wght@700;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="manifest" href="../manifest.json">
+  <link rel="icon" type="image/png" href="../assets/icon-192.png">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../assets/kwizy-loader.js"></script>
+  <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+  <style>
+    :root {
+      --primary: #1C1C1C;
+      --secondary: #0070FF;
+      --surface: #f8f9fa;
+      --card: #ffffff;
+      --border: rgba(0, 0, 0, 0.08);
+      --muted: #888;
+    }
+
+    .dark {
+      --primary: #ffffff;
+      --secondary: #0070FF;
+      --surface: #0a0a0a;
+      --card: #111111;
+      --border: rgba(255, 255, 255, 0.08);
+      --muted: #555;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--surface);
+      color: var(--primary);
+      min-height: 100vh;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+      transition: background .4s, color .4s;
+      user-select: none;
+      /* Anti-triche text selection */
+      -webkit-user-select: none;
+    }
+
+
+
+    /* ---- TOPBAR ---- */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 1.5rem 2rem;
+      background: rgba(248, 249, 250, 0.8);
+      backdrop-filter: blur(12px);
+    }
+
+    .dark .topbar {
+      background: rgba(10, 10, 10, 0.8);
+    }
+
+    .topbar-logo {
+      grid-column: 2;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--primary);
+      text-align: center;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .topbar-right {
+      grid-column: 3;
+      justify-self: end;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .theme-toggle-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+
+    .theme-toggle-btn:hover {
+      background: var(--card);
+    }
+
+    /* ---- PROGRESS BAR ---- */
+    .progress-wrap {
+      position: fixed;
+      top: 72px;
+      left: 0;
+      right: 0;
+      z-index: 999;
+      height: 3px;
+      background: var(--border);
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--secondary);
+      transition: width .5s cubic-bezier(.16, 1, .3, 1);
+    }
+
+    /* ---- MAIN ---- */
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 5.5rem 1.5rem calc(4rem + env(safe-area-inset-bottom, 0));
+    }
+
+    /* ---- ERROR SCREEN ---- */
+    #error-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      text-align: center;
+      gap: 1.5rem;
+      padding: 2rem;
+    }
+
+    #error-screen.visible {
+      display: flex;
+    }
+
+    #error-screen h2 {
+      font-size: 1.6rem;
+      font-weight: 900;
+    }
+
+    #error-screen p {
+      color: var(--muted);
+      font-size: .9rem;
+      max-width: 360px;
+      line-height: 1.6;
+    }
+
+    /* ---- QUIZ HEADER ---- */
+    #quiz-header {
+      margin-bottom: 2.5rem;
+    }
+
+    .quiz-meta {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .75rem;
+    }
+
+    .quiz-badge {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      background: rgba(0, 112, 255, .1);
+      color: var(--secondary);
+      border: 1px solid rgba(0, 112, 255, .2);
+      border-radius: 20px;
+      padding: .25rem .65rem;
+    }
+
+    .quiz-counter {
+      font-size: .75rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .quiz-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      font-weight: 900;
+      letter-spacing: -.03em;
+      line-height: 1.15;
+    }
+
+    /* ---- QUESTION CARD ---- */
+    .q-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 2rem 2rem 1.5rem;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, .06);
+      animation: fadeUp .4s cubic-bezier(.16, 1, .3, 1) forwards;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .dark .q-card {
+      box-shadow: 0 4px 24px rgba(0, 0, 0, .3);
+    }
+
+    .q-number {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .85rem;
+    }
+
+    .q-text {
+      font-size: 1.15rem;
+      font-weight: 700;
+      line-height: 1.5;
+      margin-bottom: 1.75rem;
+      color: var(--primary);
+    }
+
+    /* MCQ options */
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+    }
+
+    .option-btn {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: .9rem 1.1rem;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--primary);
+      cursor: pointer;
+      transition: all .2s;
+      text-align: left;
+      font-family: 'Inter', sans-serif;
+      font-size: .9rem;
+      font-weight: 500;
+    }
+
+    .dark .option-btn {
+      background: #0d0d0d;
+    }
+
+    .option-btn:hover {
+      border-color: var(--secondary);
+      background: rgba(0, 112, 255, .05);
+    }
+
+    .option-btn.selected {
+      border-color: var(--secondary);
+      background: rgba(0, 112, 255, .1);
+      color: var(--secondary);
+      font-weight: 700;
+    }
+
+    .option-btn.correct {
+      border-color: #22c55e;
+      background: rgba(34, 197, 94, .1);
+      color: #22c55e;
+      font-weight: 700;
+    }
+
+    .option-btn.wrong {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, .1);
+      color: #ef4444;
+      font-weight: 700;
+    }
+
+    /* ---- WAITING SCREEN & FLASHCARDS ---- */
+    #waiting-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      text-align: center;
+      gap: 1.5rem;
+      padding: 2rem;
+    }
+
+    #waiting-screen.visible {
+      display: flex;
+    }
+
+    .waiting-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid var(--secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--secondary);
+      margin-bottom: 1rem;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 112, 255, 0.4);
+      }
+
+      70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 15px rgba(0, 112, 255, 0);
+      }
+
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 112, 255, 0);
+      }
+    }
+
+    #waiting-screen h2 {
+      font-size: 2rem;
+      font-weight: 900;
+      font-family: 'Playfair Display', serif;
+    }
+
+    #waiting-screen p {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 420px;
+      line-height: 1.6;
+    }
+
+    #waiting-student-info {
+      font-weight: 700;
+      color: var(--secondary);
+      margin-top: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.8rem;
+    }
+
+    .flashcards-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .fc-scene {
+      min-height: 480px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 0 2.5rem;
+      width: 100%;
+    }
+
+    .fc-layout {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      width: 100%;
+      max-width: 620px;
+      padding: 0 1rem;
+    }
+
+    .fc-arrow {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      border: 0.5px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      transition: background 0.15s, transform 0.12s;
+      user-select: none;
+    }
+
+    .fc-arrow:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+      transform: scale(1.08);
+    }
+
+    .fc-arrow:active {
+      transform: scale(0.93);
+    }
+
+    .fc-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .fc-stack {
+      position: relative;
+      width: 100%;
+      height: 230px;
+    }
+
+    .fc-card {
+      position: absolute;
+      inset: 0;
+      background: var(--surface);
+      border: 0.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.75rem;
+      text-align: center;
+      font-size: 15px;
+      line-height: 1.65;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      color: var(--primary);
+      will-change: transform, opacity;
+    }
+
+    .fc-dots {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      height: 24px;
+      touch-action: none;
+      position: relative;
+      padding: 0 10px;
+    }
+
+    .fc-dot {
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.22);
+      transition: all 0.3s cubic-bezier(.4, 0, .2, 1);
+      cursor: pointer;
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+
+    .flashcard-close {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      color: white;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .flashcard-close:hover {
+      opacity: 1;
+    }
+
+    .option-letter {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .75rem;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    /* True/False */
+    .tf-list {
+      display: flex;
+      gap: .75rem;
+    }
+
+    .tf-btn {
+      flex: 1;
+      padding: 1.1rem;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--primary);
+      cursor: pointer;
+      transition: all .2s;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .dark .tf-btn {
+      background: #0d0d0d;
+    }
+
+    .tf-btn:hover {
+      border-color: var(--secondary);
+    }
+
+    .tf-btn.selected {
+      border-color: var(--secondary);
+      background: rgba(0, 112, 255, .1);
+      color: var(--secondary);
+    }
+
+    .tf-btn.correct {
+      border-color: #22c55e;
+      background: rgba(34, 197, 94, .1);
+      color: #22c55e;
+    }
+
+    .tf-btn.wrong {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, .1);
+      color: #ef4444;
+    }
+
+    /* Written */
+    .written-area {
+      width: 100%;
+      min-height: 120px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--primary);
+      font-family: 'Inter', sans-serif;
+      font-size: .95rem;
+      padding: 1rem;
+      outline: none;
+      resize: vertical;
+      transition: border-color .2s;
+    }
+
+    .dark .written-area {
+      background: #0d0d0d;
+    }
+
+    .written-area:focus {
+      border-color: var(--secondary);
+    }
+
+    /* ---- NAV BUTTONS ---- */
+    .nav-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 2rem;
+      gap: 1rem;
+    }
+
+    .btn-ghost {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .75rem 1.25rem;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: .85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-ghost:disabled {
+      opacity: .3;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      padding: .9rem 1.5rem;
+      border-radius: 12px;
+      border: none;
+      background: var(--secondary);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: .9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .25s;
+    }
+
+    .btn-primary:hover {
+      background: #0060dd;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(0, 112, 255, .3);
+    }
+
+    .btn-primary:active {
+      transform: none;
+    }
+
+    /* ---- RESULTS ---- */
+    #results-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 2rem;
+      padding: 2rem 0 4rem;
+    }
+
+    #results-screen.visible {
+      display: flex;
+    }
+
+    .score-circle {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      border: 6px solid var(--secondary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 112, 255, .08);
+    }
+
+    .score-num {
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--secondary);
+      line-height: 1;
+    }
+
+    .score-label {
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+    }
+
+    .results-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 900;
+    }
+
+    .results-sub {
+      color: var(--muted);
+      font-size: .9rem;
+      max-width: 360px;
+      line-height: 1.6;
+    }
+
+    .retry-btn {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .9rem 2rem;
+      border-radius: 12px;
+      border: none;
+      background: var(--secondary);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: .9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .25s;
+      text-decoration: none;
+    }
+
+    .retry-btn:hover {
+      background: #0060dd;
+    }
+
+    /* ---- ANTI-CHEAT OVERLAY (verrouillé) ---- */
+    #anti-cheat-overlay {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 999999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 2rem;
+      font-family: 'Inter', sans-serif;
+    }
+
+    #anti-cheat-overlay.visible {
+      display: flex !important;
+    }
+
+    #anti-cheat-overlay .ac-icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      animation: pulseRed 1.5s infinite;
+    }
+
+    #anti-cheat-overlay h2 {
+      color: #ef4444;
+      font-size: 1.8rem;
+      font-weight: 900;
+      margin-bottom: 1rem;
+    }
+
+    #anti-cheat-overlay p {
+      color: rgba(255, 255, 255, 0.6);
+      max-width: 420px;
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    #anti-cheat-overlay .ac-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #ef4444;
+      padding: 0.5rem 1.2rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 2rem;
+    }
+
+    /* ---- COUNTDOWN WARNING OVERLAY ---- */
+    #cheat-warn-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.97);
+      z-index: 999998;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 2rem;
+      font-family: 'Inter', sans-serif;
+      animation: fadeIn 0.15s ease;
+    }
+
+    #cheat-warn-overlay.visible {
+      display: flex !important;
+    }
+
+    #cheat-warn-overlay .warn-countdown {
+      font-size: 7rem;
+      font-weight: 900;
+      color: #f59e0b;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 60px rgba(245, 158, 11, 0.5);
+      animation: pulseRed 1s infinite;
+    }
+
+    #cheat-warn-overlay h2 {
+      color: #f59e0b;
+      font-size: 1.5rem;
+      font-weight: 900;
+      margin: 1.5rem 0 0.75rem;
+    }
+
+    #cheat-warn-overlay p {
+      color: rgba(255, 255, 255, 0.6);
+      max-width: 380px;
+      line-height: 1.6;
+      font-size: 0.9rem;
+    }
+
+    .cheat-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #ef4444;
+      padding: 0.5rem 1.2rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 2rem;
+    }
+
+    @keyframes pulseRed {
+
+      0%,
+      100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 0px #ef4444);
+      }
+
+      50% {
+        transform: scale(1.12);
+        filter: drop-shadow(0 0 20px #ef4444);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* Fullscreen warning banner */
+    #fs-warning {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 9998;
+      background: #f59e0b;
+      color: #000;
+      font-weight: 800;
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 0.6rem 1rem;
+      display: none;
+      letter-spacing: 0.04em;
+    }
+
+    #fs-warning.show {
+      display: block;
+    }
+
+    /* ---- VOLUME SCREEN ---- */
+    #volume-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--surface);
+      z-index: 9999999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    #volume-screen.visible {
+      display: flex !important;
+    }
+
+    #volume-screen .vol-icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      color: var(--secondary);
+      animation: pulse 2s infinite;
+    }
+
+    #volume-screen h2 {
+      font-size: 2rem;
+      font-weight: 900;
+      margin-bottom: 1rem;
+      font-family: 'Playfair Display', serif;
+    }
+
+    #volume-screen p {
+      color: var(--muted);
+      max-width: 420px;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    #volume-screen .btn-primary {
+      font-size: 1.1rem;
+      padding: 1rem 2.5rem;
+      flex: none;
+    }
+
+    /* ---- Tablette uniquement : dézoom du quiz à 70% ---- */
+    @media (min-width: 768px) and (max-width: 1279px) {
+      #quiz-zone {
+        zoom: 0.70;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Fullscreen Warning (countdown) -->
+  <div id="cheat-warn-overlay">
+    <div class="warn-countdown" id="warn-countdown-num">5</div>
+    <h2 id="warn-title">⚠️ Reviens ici !</h2>
+    <p id="warn-msg">Tu as quitté la fenêtre du quiz. Reviens immédiatement ou ta session sera signalée au professeur.
+    </p>
+  </div>
+
+  <!-- Anti-Cheat Overlay (SESSION VERROUILLÉE) -->
+  <div id="anti-cheat-overlay">
+    <div
+      style="background:var(--surface); padding:clamp(2rem, 5vw, 3rem); border-radius:28px; border:1px solid var(--border); max-width:480px; width: 90%; box-shadow:0 24px 80px rgba(0,0,0,0.4); color: var(--primary); animation: floatUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);">
+      <div
+        style="width:80px; height:80px; background:rgba(239,68,68,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem; box-shadow: 0 0 30px rgba(239,68,68,0.2); animation: pulse 2s infinite;">
+        <i data-lucide="lock" style="color:#ef4444; width:36px; height:36px;"></i>
+      </div>
+      <div
+        style="display:inline-block; background:#ef4444; color:#fff; padding:0.4rem 1rem; border-radius:20px; font-weight:800; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:1.5rem;">
+        🚨 Session signalée</div>
+      <h2
+        style="font-size:clamp(1.5rem, 4vw, 2rem); font-weight:900; margin-bottom:1rem; font-family:'Playfair Display', serif;">
+        Session verrouillée</h2>
+      <p style="color:var(--muted); line-height:1.6; margin-bottom:0; font-size:clamp(0.95rem, 3vw, 1.05rem);">Ton
+        professeur a été alerté. Attends qu'il déverrouille ta session pour pouvoir continuer le quiz.</p>
+    </div>
+  </div>
+
+  <!-- Volume Screen -->
+  <div id="volume-screen">
+    <div class="vol-icon"><i class="fas fa-volume-up"></i></div>
+    <h2>Son requis</h2>
+    <p>Mettez le volume de votre appareil au maximum pour entendre les alertes importantes pendant le quiz.</p>
+    <button class="btn-primary" id="btn-volume-ok">J'ai compris, entrer</button>
+  </div>
+
+  <audio id="cheat-audio" preload="auto"></audio>
+
+  <kwizy-loader></kwizy-loader>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <a href="../index.html" class="topbar-logo">Kwizy</a>
+    <div class="topbar-right">
+      <span id="top-counter" style="font-size:.75rem;font-weight:700;color:var(--muted);"></span>
+      <span id="quiz-timer" style="font-size:.75rem;font-weight:700;color:var(--muted);margin-left:1rem;"></span>
+      <button class="theme-toggle-btn" id="theme-toggle" aria-label="Thème">
+        <i id="theme-icon" class="fas fa-moon" style="font-size:14px;"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+  </div>
+
+  <main>
+    <!-- WAITING SCREEN -->
+    <div id="waiting-screen">
+      <div class="waiting-icon"><i data-lucide="shield-check" size="32"></i></div>
+      <h2>Prêt pour l'épreuve ?</h2>
+      <p>Tu es connecté. Attends que ton professeur lance le quiz pour commencer.</p>
+      <div id="waiting-student-info"></div>
+
+      <div id="ai-revisions-container" style="display: none; margin-top: 1.5rem;">
+        <button id="btn-ai-revisions" class="btn-primary"
+          style="background: rgba(0, 112, 255, 0.1); color: var(--secondary); border: 1px solid rgba(0, 112, 255, 0.2); font-size: 0.9rem; padding: 0.8rem 1.5rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+          <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i> Révisions de dernière minute
+        </button>
+      </div>
+
+      <!-- L'overlay des flashcards sera inséré dynamiquement via JS -->
+    </div>
+
+    <!-- ERROR SCREEN -->
+    <div id="error-screen">
+      <i data-lucide="alert-triangle" style="width:48px;height:48px;color:#ef4444;"></i>
+      <h2>Quiz introuvable</h2>
+      <p>Le quiz n'a pas pu être chargé. Retourne à la page d'accès et entre un code valide.</p>
+      <a href="../index.html" class="retry-btn" style="margin-top:.5rem;">
+        <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Retour
+      </a>
+    </div>
+
+    <!-- Quiz zone -->
+    <div id="quiz-zone" style="display:none;">
+      <div id="quiz-header">
+        <div class="quiz-meta">
+          <span class="quiz-badge" id="quiz-type-badge">QCM</span>
+          <span class="quiz-counter" id="q-counter">Question 1 / 10</span>
+        </div>
+        <h1 class="quiz-title" id="quiz-title"></h1>
+      </div>
+      <div id="q-card-wrap"></div>
+      <div class="nav-row">
+        <button class="btn-ghost" id="btn-prev" onclick="prevQ()">
+          <i data-lucide="chevron-left" style="width:16px;height:16px;"></i> Précédent
+        </button>
+        <button class="btn-primary" id="btn-next" onclick="nextQ()">
+          Suivant <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="results-screen">
+      <div class="score-circle">
+        <div class="score-num" id="score-num">0</div>
+        <div class="score-label">/ <span id="score-total">0</span></div>
+      </div>
+      <div class="results-title" id="results-title">Terminé !</div>
+      <p class="results-sub" id="results-sub"></p>
+      <a href="../index.html" class="retry-btn">
+        <i data-lucide="rotate-ccw" style="width:16px;height:16px;"></i> Rejoindre un autre quiz
+      </a>
+    </div>
+  </main>
+
+  <script>
+    // ---- INTRO ----
+    window.addEventListener('load', () => {
+      lucide.createIcons();
+    });
+    window.addEventListener('kwizy-loader-finished', () => {
+      showVolumeScreen();
+    });
+    // Sécurité : si l'événement est manqué, on force l'affichage après 5s
+    setTimeout(() => {
+      if (document.getElementById('volume-screen').style.display !== 'none' && !quizActive && !isLocked && !document.getElementById('waiting-screen').classList.contains('visible') && document.getElementById('quiz-zone').style.display === 'none') {
+        showVolumeScreen();
+      }
+    }, 5000);
+
+    function showVolumeScreen() {
+      const volScreen = document.getElementById('volume-screen');
+      volScreen.classList.add('visible');
+      document.getElementById('btn-volume-ok').onclick = () => {
+        volScreen.classList.remove('visible');
+
+        // 1. Fullscreen DOIT être appelé de façon synchrone dans le clic (avant tout await)
+        try { requestFullscreen(); } catch (e) { console.warn('Fullscreen error:', e); }
+
+        // 2. Initialize audio context
+        const audio = document.getElementById('cheat-audio');
+        if (audio) {
+          audio.src = '../assets/faaah.mp3';
+          audio.play().then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+          }).catch(e => console.log("Audio prep failed (fichier manquant ou bloqué):", e));
+        }
+
+        // 3. Démarrer le chargement
+        startQuiz();
+      };
+    }
+
+    // ---- ANTI-RETOUR (HISTORY API) ----
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+      history.go(1);
+    };
+
+    // ---- THEME ----
+    let currentTheme = localStorage.getItem('kwizyTheme') || 'light';
+    function applyTheme(t) {
+      document.documentElement.className = t; currentTheme = t;
+      localStorage.setItem('kwizyTheme', t);
+      const icon = document.getElementById('theme-icon');
+      if (icon) {
+        icon.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+      }
+    }
+    applyTheme(currentTheme);
+    document.getElementById('theme-toggle').addEventListener('click', () => applyTheme(currentTheme === 'dark' ? 'light' : 'dark'));
+
+    // ================================================================
+    // KWIZY — SYSTÈME ANTI-TRICHE "ZÉRO LIMITE" v2.0
+    // ================================================================
+
+    // ── Session Data ────────────────────────────────────────────────
+    const studentId = sessionStorage.getItem('kwizyStudentId');
+    const studentName = sessionStorage.getItem('kwizyStudentName');
+    const quizCode = sessionStorage.getItem('kwizyQuizCode');
+    const studentClass = sessionStorage.getItem('kwizyStudentClass') || '';
+
+    let cheatCount = 0;
+    let quizActive = false;
+    let isLocked = false;
+    let heartbeatInterval = null;
+    let statusInterval = null;
+    let fsWarningTimeout = null;
+
+    // ── Fingerprint (Signature Navigateur) ────────────────────────────
+    function getOrCreateFingerprint() {
+      const key = 'kwizy_fp_' + (quizCode || 'default');
+      let fp = localStorage.getItem(key);
+      if (!fp) {
+        fp = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        localStorage.setItem(key, fp);
+      }
+      return fp;
+    }
+    const fingerprint = getOrCreateFingerprint();
+
+    // ── Niveau 4 : Keyboard Lockdown ──────────────────────────────────
+    document.addEventListener('keydown', (e) => {
+      if (!quizActive) return;
+      const blocked =
+        e.key === 'F12' || e.key === 'F5' ||
+        (e.altKey && e.key === 'Tab') ||
+        (e.ctrlKey && ['c', 'C', 'v', 'V', 'u', 'U', 's', 'S', 'a', 'A', 'p', 'P', 'x', 'X', 'r', 'R'].includes(e.key)) ||
+        (e.metaKey && ['c', 'C', 'v', 'V', 's', 'S', 'x', 'X', 'r', 'R'].includes(e.key));
+      if (blocked) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+      // Alt seul → déclenche alerte si quiz actif
+      if (e.altKey && quizActive && !isLocked) {
+        e.preventDefault();
+        handleCheatDetection('keyboard_alt');
+      }
+    }, true);
+
+    // ── Niveau 5 : Bloquer Copy/Cut/Paste sur le contenu des questions ──
+    document.addEventListener('copy', (e) => { if (quizActive) e.preventDefault(); }, true);
+    document.addEventListener('cut', (e) => { if (quizActive) e.preventDefault(); }, true);
+    document.addEventListener('paste', (e) => { if (quizActive) e.preventDefault(); }, true);
+
+    document.addEventListener('contextmenu', (e) => {
+      if (quizActive) e.preventDefault();
+    });
+
+    // ── Niveau 2 : Visibility Tracking ────────────────────────────────
+    document.addEventListener('visibilitychange', () => {
+      if (!quizActive || isLocked || reviewed) return;
+      if (document.visibilityState === 'hidden') {
+        handleCheatDetection('tab_switch');
+      }
+    });
+
+    // ── Niveau 3 : Window Focus ────────────────────────────────────────
+    window.addEventListener('blur', () => {
+      if (!quizActive || isLocked || reviewed) return;
+      setTimeout(() => {
+        if (!document.hasFocus() && !isLocked) {
+          handleCheatDetection('window_blur');
+        }
+      }, 300);
+    });
+
+    // ── Countdown Warning System ───────────────────────────────────────
+    let warnTimer = null;
+    let warnInterval = null;
+    let warnReason = null;
+    const WARN_SECONDS = 5;
+
+    function triggerWarnCountdown(reason, title, msg) {
+      if (isLocked || reviewed || !quizActive) return;
+      if (warnTimer) return; // déjà en cours
+
+      warnReason = reason;
+      const overlay = document.getElementById('cheat-warn-overlay');
+      const num = document.getElementById('warn-countdown-num');
+      const titleEl = document.getElementById('warn-title');
+      const msgEl = document.getElementById('warn-msg');
+
+      titleEl.textContent = title;
+      msgEl.textContent = msg;
+      num.textContent = WARN_SECONDS;
+      overlay.classList.add('visible');
+
+      let remaining = WARN_SECONDS;
+      warnInterval = setInterval(() => {
+        remaining--;
+        num.textContent = remaining;
+        if (remaining <= 0) { clearInterval(warnInterval); warnInterval = null; }
+      }, 1000);
+
+      warnTimer = setTimeout(() => {
+        overlay.classList.remove('visible');
+        warnTimer = null;
+        // Si l'élève n'est pas revenu, verrouiller
+        if (!document.hasFocus() || document.visibilityState === 'hidden') {
+          handleCheatDetection(warnReason);
+        }
+      }, WARN_SECONDS * 1000);
+    }
+
+    function cancelWarnCountdown() {
+      if (!warnTimer) return;
+      clearTimeout(warnTimer);
+      clearInterval(warnInterval);
+      warnTimer = null;
+      warnInterval = null;
+      document.getElementById('cheat-warn-overlay').classList.remove('visible');
+    }
+
+    // ── Niveau 1 : Fullscreen Enforcement ─────────────────────────────
+    function requestFullscreen() {
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+    }
+
+    function isFullscreen() {
+      return !!(document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement);
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+    function handleFullscreenChange() {
+      if (!quizActive || reviewed) return;
+      if (!isFullscreen()) {
+        // L'élève a quitté le plein écran -> triche instantanée
+        clearTimeout(fsWarningTimeout);
+        if (!isLocked) {
+          handleCheatDetection('fullscreen_exit');
+        }
+      } else {
+        clearTimeout(fsWarningTimeout);
+      }
+    }
+
+    // ── Détection triche + Verrouillage instantané ────────────────────
+    async function handleCheatDetection(reason) {
+      if (!quizActive || reviewed || isLocked) return;
+
+      isLocked = true;
+      cheatCount++;
+
+      // 1. Blocage local IMMÉDIAT & Audio
+      const audio = document.getElementById('cheat-audio');
+      if (audio) { audio.currentTime = 0; audio.play().catch(e => console.log("Audio block", e)); }
+
+      const overlay = document.getElementById('anti-cheat-overlay');
+      overlay.classList.add('visible');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('quiz-zone').style.display = 'none';
+      const topbar = document.querySelector('.topbar');
+      if (topbar) topbar.style.display = 'none';
+
+      // 2. Signal serveur (arrière-plan)
+      try {
+        // Détermination dynamique de l'API base
+        let apiBase = '../../api/v1';
+        if (!window.location.pathname.includes('/public/')) {
+          apiBase = '../api/v1';
+        }
+        await fetch(`${apiBase}/session.php?action=report_cheat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: quizCode, studentId, name: studentName,
+            fingerprint, reason, cheatCount
+          })
+        });
+      } catch (e) { /* réseau coupé = le pulsar s'arrêtera, prof verra gris */ }
+
+      // 3. Polling pour déverrouillage par le prof
+      startStatusPolling();
+    }
+
+    // ── Polling déverrouillage (ultra-rapide) ────────────────────────
+    function startStatusPolling() {
+      if (statusInterval) return;
+      // 800ms pour une réactivité quasi-instantanée
+      statusInterval = setInterval(async () => {
+        try {
+          let apiBase = '../../api/v1';
+          if (!window.location.pathname.includes('/public/')) apiBase = '../api/v1';
+          const res = await fetch(
+            `${apiBase}/session.php?action=check_status&code=${quizCode}&studentId=${studentId}`
+          );
+          const data = await res.json();
+          if (data.success && data.status === 'active' && isLocked) {
+            resumeQuiz();
+          }
+        } catch (e) { }
+      }, 800);
+    }
+
+    function stopStatusPolling() {
+      if (statusInterval) { clearInterval(statusInterval); statusInterval = null; }
+    }
+
+    function resumeQuiz() {
+      isLocked = false;
+      stopStatusPolling();
+
+      const overlay = document.getElementById('anti-cheat-overlay');
+      overlay.innerHTML = `
+        <div style="background:var(--surface); padding:clamp(2rem, 5vw, 3rem); border-radius:28px; border:1px solid var(--border); max-width:480px; width: 90%; box-shadow:0 24px 80px rgba(0,0,0,0.4); color: var(--primary); animation: floatUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);">
+            <div style="width:80px; height:80px; background:rgba(34,197,94,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem; box-shadow: 0 0 30px rgba(34,197,94,0.2);">
+              <i data-lucide="unlock" style="color:#22c55e; width:36px; height:36px;"></i>
+            </div>
+            <div style="display:inline-block; background:#22c55e; color:#fff; padding:0.4rem 1rem; border-radius:20px; font-weight:800; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:1.5rem;">✅ Déverrouillée</div>
+            <h2 style="font-size:clamp(1.5rem, 4vw, 2rem); font-weight:900; margin-bottom:1rem; font-family:'Playfair Display', serif;">Reprise autorisée</h2>
+            <p style="color:var(--muted); line-height:1.6; margin-bottom:2rem; font-size:clamp(0.95rem, 3vw, 1.05rem);">Ton professeur a autorisé la reprise de l'épreuve. Tu peux maintenant continuer.</p>
+            <button id="btn-resume-quiz" class="btn-primary" style="width: 100%; padding: 1.1rem; font-size: 1.05rem; border-radius: 14px; flex: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border: none;">
+                Reprendre l'épreuve <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
+            </button>
+        </div>
+      `;
+      lucide.createIcons();
+
+      document.getElementById('btn-resume-quiz').onclick = () => {
+        // Restaurer le contenu de l'overlay pour un potentiel futur verrouillage
+        overlay.innerHTML = `
+            <div style="background:var(--surface); padding:clamp(2rem, 5vw, 3rem); border-radius:28px; border:1px solid var(--border); max-width:480px; width: 90%; box-shadow:0 24px 80px rgba(0,0,0,0.4); color: var(--primary); animation: floatUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);">
+                <div style="width:80px; height:80px; background:rgba(239,68,68,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem; box-shadow: 0 0 30px rgba(239,68,68,0.2); animation: pulse 2s infinite;">
+                  <i data-lucide="lock" style="color:#ef4444; width:36px; height:36px;"></i>
+                </div>
+                <div style="display:inline-block; background:#ef4444; color:#fff; padding:0.4rem 1rem; border-radius:20px; font-weight:800; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:1.5rem;">🚨 Session signalée</div>
+                <h2 style="font-size:clamp(1.5rem, 4vw, 2rem); font-weight:900; margin-bottom:1rem; font-family:'Playfair Display', serif;">Session verrouillée</h2>
+                <p style="color:var(--muted); line-height:1.6; margin-bottom:0; font-size:clamp(0.95rem, 3vw, 1.05rem);">Ton professeur a été alerté. Attends qu'il déverrouille ta session pour pouvoir continuer le quiz.</p>
+            </div>
+         `;
+        lucide.createIcons();
+
+        overlay.classList.remove('visible');
+        document.getElementById('quiz-zone').style.display = 'block';
+        const topbar = document.querySelector('.topbar');
+        if (topbar) topbar.style.display = 'grid';
+
+        // Forcer le plein écran lors du geste utilisateur
+        try { if (!isFullscreen()) requestFullscreen(); } catch (e) { console.warn('Fullscreen error:', e); }
+
+        // Reprendre le heartbeat normal
+        startHeartbeat();
+      };
+    }
+
+    // ── Heartbeat / Pulsar (toutes les 3 secondes) ────────────────────
+    const memoryTabId = Math.random().toString(36).substr(2, 9);
+    function sendHeartbeat(statusOverride) {
+      if (!quizCode || !studentId || reviewed) return;
+      let apiBase = '../../api/v1';
+      if (!window.location.pathname.includes('/public/')) apiBase = '../api/v1';
+      const params = new URLSearchParams({
+        check_status: 1, code: quizCode, studentId,
+        currentQuestion: current + 1,
+        totalQuestions: questions.length
+      });
+      fetch(`${apiBase}/session.php?` + params.toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers, tabId: memoryTabId })
+      }).then(r => r.json()).then(data => {
+        if (!data.success) return;
+
+        // 1. Détecter si la session a été clôturée par le prof
+        //    'termine' = quiz terminé par le prof
+        //    'publie'  = salle d'attente, ne signifie PAS que la session est close !
+        if (data.session_statut === 'termine') {
+          showSessionEndNotice();
+          return;
+        }
+
+        // Si le quiz repasse en 'publie' pendant un quiz actif => le prof a stoppé la session live
+        if (quizActive && !reviewed && data.quiz_statut === 'publie') {
+          showSessionEndNotice();
+          return;
+        }
+
+        // 2. Détecter les verrouillages (triche)
+        if (data.status === 'locked' && !isLocked) {
+          handleCheatDetection('server_lock');
+        }
+        // 3. Détecter les déverrouillages
+        if (data.status === 'active' && isLocked) {
+          resumeQuiz();
+        }
+      }).catch(() => { });
+    }
+
+    function startHeartbeat() {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      sendHeartbeat(); // ping immédiat
+      heartbeatInterval = setInterval(() => {
+        if (!reviewed && !isLocked) sendHeartbeat();
+      }, 3000);
+    }
+
+    // ---- STATE ----
+    let quiz = null;
+    let questions = [];
+    let current = 0;
+    let answers = {};   // index -> answer value
+    let reviewed = false;
+    let timerInterval = null;
+    let timeRemaining = null;
+    const draftKey = `kwizy_answers_${quizCode || 'unknown'}_${studentId || 'anon'}`;
+
+    async function startQuiz() {
+      try {
+        const raw = sessionStorage.getItem('kwizyCurrentQuiz');
+        if (!raw || raw === 'null') {
+          console.warn("Quiz data missing in sessionStorage");
+          showError("Quiz introuvable. Merci de scanner à nouveau le code.");
+          return;
+        }
+
+        if (!studentId || !studentName) {
+          console.warn("Student identity missing");
+          window.location.href = '../eleves/classroom.html' + (quizCode ? `?code=${quizCode}` : '');
+          return;
+        }
+
+        try {
+          quiz = JSON.parse(raw);
+        } catch (e) {
+          showError("Erreur lors du chargement des données du quiz.");
+          return;
+        }
+
+        if (!quiz || typeof quiz !== 'object') {
+          showError("Données du quiz invalides.");
+          return;
+        }
+
+        questions = (quiz.questions || []).filter(q => q && q.text);
+        if (quiz.settings?.randomizeOrder) {
+          const orderKey = `kwizy_question_order_${quizCode}`;
+          const savedOrder = sessionStorage.getItem(orderKey);
+          if (savedOrder) {
+            try {
+              const order = JSON.parse(savedOrder);
+              if (Array.isArray(order) && order.length === questions.length) {
+                questions = order.map(idx => questions[idx]).filter(Boolean);
+              }
+            } catch (e) {
+              sessionStorage.removeItem(orderKey);
+            }
+          }
+          if (!sessionStorage.getItem(orderKey)) {
+            const order = questions.map((_, i) => i);
+            shuffleArray(order);
+            sessionStorage.setItem(orderKey, JSON.stringify(order));
+            questions = order.map(i => questions[i]);
+          }
+        }
+        if (!questions.length) {
+          showError("Ce quiz ne contient aucune question valide.");
+          return;
+        }
+
+        document.getElementById('quiz-title').textContent = quiz.title || 'Quiz Kwizy';
+
+        // Détermination du chemin API dynamique (Base v3)
+        let apiBase = '../../api/v1';
+        if (!window.location.pathname.includes('/public/')) {
+          apiBase = '../api/v1';
+        }
+
+        // 1. Rejoindre la session côté serveur pour apparaître dans le monitoring
+        try {
+          const joinRes = await fetch(`${apiBase}/session.php?action=join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              code: quizCode,
+              nom_eleve: studentName,
+              student_id: studentId,
+              student_class: studentClass
+            })
+          });
+          if (!joinRes.ok) {
+            let errMsg = 'Serveur indisponible.';
+            try {
+              const errData = await joinRes.json();
+              errMsg = errData.message || errMsg;
+            } catch (e) {
+              errMsg = 'Erreur interne du serveur (500).';
+            }
+            alert("Erreur de connexion : " + errMsg);
+          }
+        } catch (e) {
+          alert("Erreur de connexion critique : " + e.message);
+          console.warn("Erreur join session:", e);
+        }
+
+        // 2. Récupération des réponses et statut serveur
+        try {
+          const res = await fetch(`${apiBase}/session.php?action=check_status&code=${quizCode}&studentId=${studentId}&name=${encodeURIComponent(studentName)}&fp=${fingerprint}`);
+          const data = await res.json();
+
+          if (data.status === 'locked' || data.status === 'cheating') {
+            // Verrouillage persistant : écran noir immédiat !
+            document.getElementById('anti-cheat-overlay').classList.add('visible');
+
+            document.body.style.overflow = 'hidden';
+            isLocked = true;
+            quizActive = true;
+            if (data.savedAnswers) answers = { ...answers, ...data.savedAnswers };
+            startHeartbeat();
+            startStatusPolling();
+            return;
+          }
+
+          if (data.session_statut === 'termine') {
+            showResults();
+            return;
+          }
+
+          if (data.savedAnswers) {
+            answers = { ...answers, ...data.savedAnswers };
+          }
+          if (data.currentQuestion > 0) {
+            current = data.currentQuestion - 1; // Le serveur stocke 1-based, on utilise 0-based
+          }
+        } catch (e) { }
+
+        // Statut serveur à jour (évite le cache sessionStorage obsolète)
+        const liveStatut = await refreshQuizStatus(apiBase);
+
+        // 3. Vérification du statut (Mode Salle d'attente)
+        if (liveStatut === 'publie') {
+          document.getElementById('waiting-screen').classList.add('visible');
+          document.getElementById('waiting-student-info').textContent = `${studentName} · ${studentClass || 'Sans classe'}`;
+
+          // Afficher le bouton IA si pas désactivé
+          if (!quiz.settings || quiz.settings.allowFlashcards !== false) {
+            document.getElementById('ai-revisions-container').style.display = 'block';
+            document.getElementById('btn-ai-revisions').addEventListener('click', () => loadFlashcards(quiz, apiBase));
+          }
+
+          startWaitingRoomPolling(apiBase);
+          return;
+        }
+
+        const localDraft = restoreDraft();
+        if (localDraft && localDraft.answers && typeof localDraft.answers === 'object') {
+          answers = { ...answers, ...localDraft.answers };
+          if (Number.isInteger(localDraft.current) && localDraft.current >= 0 && localDraft.current < questions.length) {
+            current = localDraft.current;
+          }
+        }
+
+        document.getElementById('quiz-zone').style.display = 'block';
+        quizActive = true;
+
+        // (Le plein écran a déjà été forcé de manière synchrone lors du clic sur OK)
+
+        // Démarrer le Pulsar (Heartbeat toutes les 3s)
+        startHeartbeat();
+        renderQuestion();
+
+      } catch (err) {
+        console.error("CRITICAL QUIZ START ERROR:", err);
+        showError("Une erreur inattendue est survenue au démarrage.");
+      }
+    }
+
+    function showSessionEndNotice() {
+      const overlay = document.createElement('div');
+      overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; color:white; font-family:'Inter', sans-serif; text-align:center; padding:2rem; backdrop-filter:blur(10px); animation: fadeIn 0.5s ease;";
+      overlay.innerHTML = `
+         <div style="background:var(--surface); padding:3rem; border-radius:32px; border:1px solid rgba(255,255,255,0.1); max-width:500px; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+            <div style="width:80px; height:80px; background:rgba(0,112,255,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 2rem;">
+              <i data-lucide="info" style="color:var(--secondary); width:40px; height:40px;"></i>
+            </div>
+            <h1 style="font-size:1.8rem; font-weight:900; margin-bottom:1rem; letter-spacing:-0.02em;">Session terminée</h1>
+            <p style="opacity:0.7; line-height:1.6; margin-bottom:2.5rem;">Le professeur a mis fin à la session d'évaluation. Votre travail a été sauvegardé avec succès.</p>
+            <button onclick="window.location.href='../eleves/classroom.html'" style="background:var(--secondary); color:white; border:none; padding:1rem 2rem; border-radius:12px; font-weight:800; cursor:pointer; width:100%; font-size:1rem; transition:0.3s;">Retour à la classe</button>
+         </div>
+       `;
+      document.body.appendChild(overlay);
+      lucide.createIcons();
+      setTimeout(() => { window.location.href = '../eleves/classroom.html'; }, 5000);
+    }
+
+    function persistDraft() {
+      try {
+        localStorage.setItem(draftKey, JSON.stringify({ answers, current, updatedAt: Date.now() }));
+      } catch (e) { }
+    }
+
+    function restoreDraft() {
+      try {
+        const raw = localStorage.getItem(draftKey);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return (parsed && typeof parsed === 'object') ? parsed : null;
+      } catch (e) { return null; }
+    }
+
+    function clearDraft() {
+      try { localStorage.removeItem(draftKey); } catch (e) { }
+    }
+
+    let currentFlashcards = [];
+    let currentFlashcardIndex = 0;
+
+    async function loadFlashcards(quizObj, apiBase) {
+      try {
+        const btn = document.getElementById('btn-ai-revisions');
+        btn.innerHTML = `<i data-lucide="loader" class="spin" style="width: 16px; height: 16px;"></i> Génération en cours...`;
+        lucide.createIcons();
+        btn.disabled = true;
+
+        const reqBody = {
+          topic: quizObj.title,
+          questions: (quizObj.questions || []).map(q => q.text).filter(t => t)
+        };
+
+        const res = await fetch(`${apiBase}/flashcards.php`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(reqBody)
+        });
+        const data = await res.json();
+
+        if (data && data.flashcards && data.flashcards.length > 0) {
+          currentFlashcards = data.flashcards;
+          currentFlashcardIndex = 0;
+          renderFlashcardsOverlay();
+        } else {
+          alert("Impossible de générer les flashcards pour le moment.");
+        }
+      } catch (e) {
+        alert("Erreur lors de la génération des révisions IA.");
+      } finally {
+        const btn = document.getElementById('btn-ai-revisions');
+        btn.innerHTML = `<i data-lucide="sparkles" style="width: 16px; height: 16px;"></i> Révisions de dernière minute`;
+        lucide.createIcons();
+        btn.disabled = false;
+      }
+    }
+
+    let animating = false;
+
+    function renderFlashcardsOverlay() {
+      clearFlashcards();
+      const overlay = document.createElement('div');
+      overlay.className = 'flashcards-overlay';
+      overlay.id = 'flashcards-overlay';
+
+      overlay.innerHTML = `
+        <div class="flashcard-close" onclick="clearFlashcards()"><i data-lucide="x" style="width:32px; height:32px;"></i></div>
+        <div class="fc-scene">
+          <div class="fc-layout">
+            <div class="fc-arrow" id="fc-prev" aria-label="Précédent"><i data-lucide="chevron-left"></i></div>
+            <div class="fc-center">
+              <div class="fc-stack" id="fc-stack"></div>
+              <div class="fc-dots" id="fc-dots"></div>
+            </div>
+            <div class="fc-arrow" id="fc-next" aria-label="Suivant"><i data-lucide="chevron-right"></i></div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      lucide.createIcons();
+
+      // Bind arrows
+      document.getElementById('fc-prev').addEventListener('click', function () { fcGo(-1); });
+      document.getElementById('fc-next').addEventListener('click', function () { fcGo(1); });
+
+      // Bind keyboard
+      window.fcKeyHandler = function (e) {
+        if (e.key === 'ArrowLeft') fcGo(-1);
+        if (e.key === 'ArrowRight') fcGo(1);
+      };
+      document.addEventListener('keydown', window.fcKeyHandler);
+
+      // Drag interaction on dots
+      const dotsContainer = document.getElementById('fc-dots');
+      let isDragging = false;
+
+      function handleScrub(e) {
+        const rect = dotsContainer.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const fraction = x / rect.width;
+        let idx = Math.floor(fraction * currentFlashcards.length);
+        if (idx < 0) idx = 0;
+        if (idx >= currentFlashcards.length) idx = currentFlashcards.length - 1;
+        fcGoTo(idx, true);
+      }
+
+      dotsContainer.addEventListener('pointerdown', function (e) {
+        isDragging = true;
+        dotsContainer.setPointerCapture(e.pointerId);
+        handleScrub(e);
+      });
+      dotsContainer.addEventListener('pointermove', function (e) {
+        if (isDragging) handleScrub(e);
+      });
+      dotsContainer.addEventListener('pointerup', function (e) {
+        isDragging = false;
+        dotsContainer.releasePointerCapture(e.pointerId);
+      });
+      dotsContainer.addEventListener('pointercancel', function () {
+        isDragging = false;
+      });
+
+      fcRenderStack(true);
+      fcRenderDots();
+    }
+
+    function fcMod(i) {
+      const N = currentFlashcards.length;
+      return ((i % N) + N) % N;
+    }
+
+    function fcSlot(idx) {
+      const N = currentFlashcards.length;
+      let s = idx - currentFlashcardIndex;
+      if (s > Math.floor(N / 2)) s -= N;
+      if (s < -Math.floor(N / 2)) s += N;
+      return s;
+    }
+
+    function fcStyleForSlot(s) {
+      const a = Math.abs(s);
+      if (a === 0) return { tx: 0, ty: 0, rot: 0, sc: 1, op: 1, z: 10 };
+      if (a === 1) { const sg = s > 0 ? 1 : -1; return { tx: sg * 16, ty: 12, rot: sg * 5, sc: 0.93, op: 0.65, z: 7 }; }
+      if (a === 2) { const sg = s > 0 ? 1 : -1; return { tx: sg * 26, ty: 22, rot: sg * 9, sc: 0.85, op: 0.35, z: 4 }; }
+      return { tx: 0, ty: 30, rot: 0, sc: 0.78, op: 0, z: 1 };
+    }
+
+    function fcApplyStyle(el, s, instant) {
+      const t = fcStyleForSlot(s);
+      el.style.transition = instant ? 'none' : 'transform 0.42s cubic-bezier(.4,0,.2,1),opacity 0.42s ease';
+      el.style.transform = `translateX(${t.tx}px) translateY(${t.ty}px) rotate(${t.rot}deg) scale(${t.sc})`;
+      el.style.opacity = t.op;
+      el.style.zIndex = t.z;
+      el.style.pointerEvents = s === 0 ? 'auto' : 'none';
+    }
+
+    function fcRenderStack(instant) {
+      const stackEl = document.getElementById('fc-stack');
+      const N = currentFlashcards.length;
+      if (!stackEl.children.length) {
+        for (let i = 0; i < N; i++) {
+          const c = document.createElement('div');
+          c.className = 'fc-card';
+          c.dataset.idx = i;
+          c.textContent = currentFlashcards[i];
+          stackEl.appendChild(c);
+        }
+      }
+      const els = stackEl.children;
+      for (let i = 0; i < els.length; i++) {
+        fcApplyStyle(els[i], fcSlot(parseInt(els[i].dataset.idx)), instant);
+      }
+    }
+
+    function fcRenderDots() {
+      const dotsEl = document.getElementById('fc-dots');
+      const N = currentFlashcards.length;
+      dotsEl.innerHTML = '';
+      for (let i = 0; i < N; i++) {
+        const d = document.createElement('div');
+        d.className = 'fc-dot';
+        d.setAttribute('role', 'button');
+        d.setAttribute('aria-label', 'Carte ' + (i + 1));
+        const dist = Math.min(Math.abs(i - currentFlashcardIndex), N - Math.abs(i - currentFlashcardIndex));
+
+        if (dist === 0) { d.style.width = '9px'; d.style.height = '9px'; d.style.background = 'rgba(255,255,255,0.95)'; d.style.transform = 'scale(1.2)'; }
+        else if (dist === 1) { d.style.width = '6px'; d.style.height = '6px'; d.style.background = 'rgba(255,255,255,0.38)'; d.style.transform = 'scale(1)'; }
+        else { d.style.width = '5px'; d.style.height = '5px'; d.style.background = 'rgba(255,255,255,0.16)'; d.style.transform = 'scale(1)'; }
+
+        dotsEl.appendChild(d);
+      }
+    }
+
+    function fcGoTo(target, isScrub) {
+      if ((animating && !isScrub) || target === currentFlashcardIndex) return;
+      if (!isScrub) animating = true;
+      currentFlashcardIndex = target;
+      fcRenderStack(false);
+      fcRenderDots();
+      if (!isScrub) setTimeout(function () { animating = false; }, 450);
+    }
+
+    function fcGo(dir) {
+      fcGoTo(fcMod(currentFlashcardIndex + dir));
+    }
+
+    window.clearFlashcards = function () {
+      if (window.fcKeyHandler) document.removeEventListener('keydown', window.fcKeyHandler);
+      const overlay = document.getElementById('flashcards-overlay');
+      if (overlay) overlay.remove();
+    };
+
+    let waitingRoomHeartbeat = null;
+    let quizLaunchHandled = false;
+
+    function startWaitingRoomHeartbeat(apiBase) {
+      if (waitingRoomHeartbeat) clearInterval(waitingRoomHeartbeat);
+      const ping = () => {
+        if (!quizCode || !studentId) return;
+        const params = new URLSearchParams({ check_status: 1, code: quizCode, studentId, currentQuestion: 0 });
+        fetch(`${apiBase}/session.php?` + params.toString(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tabId: memoryTabId })
+        }).catch(() => { });
+      };
+      ping();
+      waitingRoomHeartbeat = setInterval(ping, 25000);
+    }
+
+    function stopWaitingRoomHeartbeat() {
+      if (waitingRoomHeartbeat) {
+        clearInterval(waitingRoomHeartbeat);
+        waitingRoomHeartbeat = null;
+      }
+    }
+
+    async function refreshQuizStatus(apiBase) {
+      try {
+        const res = await fetch(`${apiBase}/lookup.php?share_code=${encodeURIComponent(quizCode)}`);
+        const data = await res.json();
+        if (data.status === 'found' && data.quiz) {
+          sessionStorage.setItem('kwizyCurrentQuiz', JSON.stringify(data.quiz));
+          quiz = data.quiz;
+          questions = (quiz.questions || []).filter(q => q && q.text);
+          return quiz.statut;
+        }
+      } catch (e) { console.warn('refreshQuizStatus:', e); }
+      return quiz?.statut;
+    }
+
+    function startWaitingRoomPolling(apiBase) {
+      startWaitingRoomHeartbeat(apiBase);
+      const pollOnce = async () => {
+        try {
+          const res = await fetch(`${apiBase}/lookup.php?share_code=${encodeURIComponent(quizCode)}`);
+          const data = await res.json();
+          if (data.status === 'found' && data.quiz.statut === 'lance') {
+            return data;
+          }
+        } catch (e) { console.warn("Polling waiting room error:", e); }
+        return null;
+      };
+      pollOnce().then(data => { if (data) onQuizLaunched(data, apiBase); });
+      const interval = setInterval(async () => {
+        const data = await pollOnce();
+        if (data) {
+          clearInterval(interval);
+          stopWaitingRoomHeartbeat();
+          onQuizLaunched(data, apiBase);
+        }
+      }, 2000);
+    }
+
+    function onQuizLaunched(data, apiBase) {
+      if (quizLaunchHandled) return;
+      if (data.status === 'found' && data.quiz.statut === 'lance') {
+        quizLaunchHandled = true;
+        document.querySelector('.waiting-icon').innerHTML = '<i data-lucide="play-circle" style="width:32px;height:32px;"></i>';
+        document.querySelector('#waiting-screen h2').textContent = 'Le quiz a démarré !';
+        document.querySelector('#waiting-screen p').textContent = 'Clique sur le bouton ci-dessous pour entrer en mode plein écran et commencer.';
+
+        const infoDiv = document.getElementById('waiting-student-info');
+        infoDiv.innerHTML = `<button id="btn-start-now" class="btn-primary" style="margin: 1.5rem auto 0; font-size: 1.1rem; padding: 1rem 2rem;">Démarrer le quiz <i data-lucide="chevron-right" style="width:18px;height:18px;"></i></button>`;
+        lucide.createIcons();
+
+        // Cacher le bouton IA
+        const aiCont = document.getElementById('ai-revisions-container');
+        if (aiCont) aiCont.style.display = 'none';
+        clearFlashcards();
+
+        document.getElementById('btn-start-now').addEventListener('click', () => {
+          document.getElementById('waiting-screen').classList.remove('visible');
+
+          // Re-charger les données
+          sessionStorage.setItem('kwizyCurrentQuiz', JSON.stringify(data.quiz));
+          quiz = data.quiz;
+          questions = (quiz.questions || []).filter(q => q && q.text);
+
+          document.getElementById('quiz-zone').style.display = 'block';
+          quizActive = true;
+
+          try { requestFullscreen(); } catch (e) { console.warn('Fullscreen error', e); }
+
+          startHeartbeat();
+          renderQuestion();
+        });
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById('error-screen').classList.add('visible');
+      if (msg) document.querySelector('#error-screen p').textContent = msg;
+      lucide.createIcons();
+    }
+
+    // ---- RENDER QUESTION ----
+    function renderQuestion() {
+      const q = questions[current];
+      const total = questions.length;
+
+      // progress
+      document.getElementById('progress-bar').style.width = `${((current + 1) / total) * 100}%`;
+      document.getElementById('q-counter').textContent = `Question ${current + 1} / ${total}`;
+      document.getElementById('top-counter').textContent = `${current + 1} / ${total}`;
+
+      // badge
+      const typeMap = { MCQ: 'QCM', TRUE_FALSE: 'Vrai / Faux', WRITTEN: 'Réponse ouverte' };
+      document.getElementById('quiz-type-badge').textContent = typeMap[q.type] || 'Question';
+
+      // next / submit label
+      const nextBtn = document.getElementById('btn-next');
+      nextBtn.innerHTML = current === total - 1
+        ? 'Terminer <i data-lucide="check" style="width:16px;height:16px;"></i>'
+        : 'Suivant <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>';
+
+      // prev btn
+      const prevBtn = document.getElementById('btn-prev');
+      const strictNav = quiz.settings?.navigationMode === 'strict';
+      prevBtn.disabled = current === 0 || strictNav;
+      prevBtn.style.opacity = strictNav ? '0.4' : '1';
+
+      // render card
+      const wrap = document.getElementById('q-card-wrap');
+      wrap.innerHTML = buildCard(q, current);
+      lucide.createIcons();
+
+      // restore saved answer
+      restoreAnswer(q, current);
+
+      if (quiz.settings?.timeLimitMode === 'per_question') {
+        startQuizTimer();
+      } else if (quiz.settings?.timeLimitMode === 'global' && !timerInterval) {
+        startQuizTimer();
+      }
+
+      // Mise à jour de la position pour le monitoring prof
+      sendHeartbeat('active');
+    }
+
+    function buildCard(q, idx) {
+      let body = '';
+      if (q.type === 'MCQ' || q.type === 'MCQ_MULTI') {
+        body = `<div class="options-list">` +
+          (q.options || []).map((opt, i) => {
+            const text = typeof opt === 'string' ? opt : opt.text;
+            return `<button class="option-btn" id="opt-${idx}-${i}" onclick="selectOpt(${idx},${i},this,'${q.type}')">
+              <span class="option-letter">${String.fromCharCode(65 + i)}</span>
+              <span>${escHtml(text)}</span>
+            </button>`;
+          }).join('') + `</div>`;
+      } else if (q.type === 'TRUE_FALSE') {
+        body = `<div class="tf-list">
+          <button class="tf-btn" id="tf-${idx}-true" onclick="selectTF(${idx},'true',this)">✅ Vrai</button>
+          <button class="tf-btn" id="tf-${idx}-false" onclick="selectTF(${idx},'false',this)">❌ Faux</button>
+        </div>`;
+      } else {
+        body = `<textarea class="written-area" id="written-${idx}" placeholder="Écris ta réponse ici..." rows="4"
+          oninput="answers[${idx}]=this.value; persistDraft(); sendHeartbeat('active')"></textarea>`;
+      }
+      const image = q.image ? `<div class="q-image-wrap" style="margin-bottom:1.5rem; display:flex; justify-content:center;">
+        <img src="${q.image}" style="max-width:100%; max-height:300px; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.1); object-fit:contain;" />
+      </div>` : '';
+
+      return `<div class="q-card">
+        <div class="q-number">Question ${idx + 1}</div>
+        <div class="q-text">${escHtml(q.text)}</div>
+        ${image}
+        ${body}
+      </div>`;
+    }
+
+    function shuffleArray(array) {
+      const arr = array.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function formatDuration(seconds) {
+      const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function updateQuizTimerDisplay() {
+      const timerEl = document.getElementById('quiz-timer');
+      if (!timerEl) return;
+      if (timeRemaining === null) {
+        timerEl.textContent = '';
+        return;
+      }
+      timerEl.textContent = formatDuration(timeRemaining);
+    }
+
+    function stopQuizTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      timeRemaining = null;
+      updateQuizTimerDisplay();
+    }
+
+    function handleTimeExpiry() {
+      if (quiz.settings?.timeLimitMode === 'per_question' && current < questions.length - 1) {
+        current++;
+        persistDraft();
+        renderQuestion();
+        return;
+      }
+      showResults();
+    }
+
+    function startQuizTimer() {
+      stopQuizTimer();
+      const mode = quiz.settings?.timeLimitMode;
+      if (!mode) return;
+      if (mode === 'global') {
+        timeRemaining = Number(quiz.settings.timeGlobal) || 0;
+      } else if (mode === 'per_question') {
+        timeRemaining = Number(quiz.settings.timePerQuestion) || 0;
+      }
+      if (!timeRemaining) {
+        timeRemaining = null;
+        updateQuizTimerDisplay();
+        return;
+      }
+      updateQuizTimerDisplay();
+      timerInterval = setInterval(() => {
+        timeRemaining -= 1;
+        if (timeRemaining <= 0) {
+          stopQuizTimer();
+          handleTimeExpiry();
+        } else {
+          updateQuizTimerDisplay();
+        }
+      }, 1000);
+    }
+
+    function restoreAnswer(q, idx) {
+      if (answers[idx] === undefined) return;
+      if (q.type === 'MCQ') {
+        const btn = document.getElementById(`opt-${idx}-${answers[idx]}`);
+        if (btn) btn.classList.add('selected');
+      } else if (q.type === 'MCQ_MULTI') {
+        (answers[idx] || []).forEach(i => {
+          const btn = document.getElementById(`opt-${idx}-${i}`);
+          if (btn) btn.classList.add('selected');
+        });
+      } else if (q.type === 'TRUE_FALSE') {
+        const btn = document.getElementById(`tf-${idx}-${answers[idx]}`);
+        if (btn) btn.classList.add('selected');
+      } else {
+        const ta = document.getElementById(`written-${idx}`);
+        if (ta) ta.value = answers[idx];
+      }
+    }
+
+    function selectOpt(qIdx, optIdx, el, type) {
+      if (reviewed) return;
+      if (type === 'MCQ_MULTI') {
+        if (!Array.isArray(answers[qIdx])) answers[qIdx] = [];
+        if (answers[qIdx].includes(optIdx)) {
+          answers[qIdx] = answers[qIdx].filter(i => i !== optIdx);
+          el.classList.remove('selected');
+        } else {
+          answers[qIdx].push(optIdx);
+          el.classList.add('selected');
+        }
+      } else {
+        document.querySelectorAll(`[id^="opt-${qIdx}-"]`).forEach(b => b.classList.remove('selected'));
+        answers[qIdx] = optIdx;
+        el.classList.add('selected');
+      }
+      sendHeartbeat('active');
+      persistDraft();
+    }
+
+    function selectTF(qIdx, val, el) {
+      if (reviewed) return;
+      document.querySelectorAll(`[id^="tf-${qIdx}-"]`).forEach(b => b.classList.remove('selected'));
+      answers[qIdx] = val;
+      el.classList.add('selected');
+      sendHeartbeat('active');
+      persistDraft();
+    }
+
+    // ---- NAVIGATION ----
+    function nextQ() {
+      if (current < questions.length - 1) {
+        current++;
+        persistDraft();
+        renderQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function prevQ() {
+      if (quiz.settings?.navigationMode === 'strict') return;
+      if (current > 0) { current--; persistDraft(); renderQuestion(); }
+    }
+
+    // ---- RESULTS ----
+    function showResults() {
+      reviewed = true;
+      quizActive = false;
+      let score = 0;
+      const scorable = questions.filter(q => q.type !== 'WRITTEN');
+
+      // Construire le tableau de réponses détaillées pour le serveur
+      const detailedAnswers = questions.map((q, idx) => {
+        const userAns = answers[idx];
+        let isCorrect = null;
+        let displayValue = userAns;
+
+        if (q.type === 'MCQ') {
+          const correct = q.correctOptionIndex ?? (q.options || []).findIndex(o => o.isCorrect);
+          isCorrect = userAns === correct;
+          displayValue = (q.options || [])[userAns] ?? '—';
+          if (isCorrect) score++;
+        } else if (q.type === 'MCQ_MULTI') {
+          const correctSet = new Set((q.correctOptionIndexes || []).map(Number));
+          const userSet = new Set((userAns || []).map(Number));
+          isCorrect = correctSet.size === userSet.size && [...correctSet].every(i => userSet.has(i));
+          displayValue = (userAns || []).map(i => q.options[i]).join(', ');
+          if (isCorrect) score++;
+        } else if (q.type === 'TRUE_FALSE') {
+          const correct = q.correctOptionIndex === 0 ? 'true' : 'false';
+          isCorrect = userAns === correct;
+          displayValue = userAns === 'true' ? 'Vrai' : (userAns === 'false' ? 'Faux' : '—');
+          if (isCorrect) score++;
+        } else {
+          displayValue = userAns || '';
+        }
+
+        return { value: displayValue, correct: isCorrect };
+      });
+
+      const pct = scorable.length ? Math.round((score / scorable.length) * 100) : 100;
+      let emoji = pct >= 80 ? '🎉' : pct >= 50 ? '👍' : '💪';
+      let msg = pct >= 80
+        ? 'Excellent travail ! Tu maîtrises très bien ce sujet.'
+        : pct >= 50
+          ? "Bon effort ! Continue à t'entraîner pour progresser."
+          : "Ce n'est qu'un début ! Revois les notions et réessaie.";
+
+      document.getElementById('quiz-zone').style.display = 'none';
+      document.getElementById('results-screen').classList.add('visible');
+      document.getElementById('score-num').textContent = score;
+      document.getElementById('score-total').textContent = scorable.length;
+      document.getElementById('results-title').textContent = `${emoji} ${pct}%`;
+      document.getElementById('results-sub').textContent = msg;
+      lucide.createIcons();
+
+      // Envoi des résultats au serveur (avec résilience offline)
+      if (quizCode && studentId) {
+        const payload = {
+          code: quizCode,
+          studentId,
+          name: studentName,
+          class: studentClass,
+          score,
+          total: scorable.length,
+          answers: detailedAnswers
+        };
+
+        // Détermination dynamique de l'API base
+        let apiBase = '../../api/v1';
+        if (!window.location.pathname.includes('/public/')) {
+          apiBase = '../api/v1';
+        }
+
+        const submitResult = async (data) => {
+          try {
+            const res = await fetch(`${apiBase}/session.php?action=finish_and_submit`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data)
+            });
+            if (res.ok) {
+              localStorage.removeItem('kwizy_pending_submission');
+              console.log("Résultat envoyé avec succès");
+            }
+          } catch (e) {
+            console.warn("Échec envoi (Offline), stockage en attente...");
+            localStorage.setItem('kwizy_pending_submission', JSON.stringify(data));
+          }
+        };
+
+        submitResult(payload);
+      }
+      stopQuizTimer();
+      clearDraft();
+    }
+
+    // ---- PWA : Service Worker Registration ----
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('../sw.js').then(reg => {
+          console.log('Kwizy SW Registered');
+        }).catch(err => console.log('SW Reg Error', err));
+      });
+    }
+
+    // Tenter de renvoyer les résultats en attente dès qu'on récupère le réseau
+    window.addEventListener('online', () => {
+      const pending = localStorage.getItem('kwizy_pending_submission');
+      if (pending) {
+        console.log("Réseau retrouvé, envoi de la copie en attente...");
+        const data = JSON.parse(pending);
+
+        let apiBase = '../../api/v1';
+        if (!window.location.pathname.includes('/public/')) {
+          apiBase = '../api/v1';
+        }
+
+        fetch(`${apiBase}/session.php?action=finish_and_submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        }).then(res => {
+          if (res.ok) localStorage.removeItem('kwizy_pending_submission');
+        });
+      }
+    });
+
+    function escHtml(str) {
+      return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ---- REAL-TIME (PUSHER) ----
+    async function initRealTime() {
+      try {
+        const cfgRes = await fetch('../runtime_config.php');
+        const cfg = await cfgRes.json();
+        const realtime = cfg?.realtime || {};
+        const pusherCfg = realtime?.pusher || {};
+        const pusherKey = pusherCfg.key;
+        const pusherCluster = pusherCfg.cluster || 'eu';
+        if (!realtime.enabled || realtime.provider !== 'pusher' || !pusherKey) return;
+
+        const pusher = new Pusher(pusherKey, { cluster: pusherCluster });
+        const channel = pusher.subscribe(`student-${studentId}`);
+
+        channel.bind('unlocked', (data) => {
+          if (data.code === quizCode) {
+            isLocked = false;
+            resumeQuiz();
+            console.log("Déverrouillage distant reçu !");
+          }
+        });
+      } catch (e) {
+        console.warn('Realtime indisponible', e);
+      }
+    }
+    initRealTime();
+  </script>
+</body>
+
+</html>
