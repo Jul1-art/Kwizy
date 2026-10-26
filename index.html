@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kwizy</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="assets/icon-192.png">
+    <link rel="manifest" href="public/manifest.json">
+    <link rel="icon" type="image/png" href="public/assets/icon-192.png">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,7 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="assets/kwizy-loader.js?v=2"></script>
+    <script src="public/assets/kwizy-loader.js?v=2"></script>
 
     <style>
         :root {
@@ -377,7 +377,7 @@
             <span class="btn-title">Professeurs</span>
         </a>
 
-        <a href="landing/landing.html" class="portal-btn">
+        <a href="public/landing/landing.html" class="portal-btn">
             <span class="btn-title">Histoire du projet</span>
         </a>
     </div>
@@ -499,12 +499,12 @@
                     const session = localStorage.getItem('kwizySession');
                     if (!session || session === 'null' || session === 'undefined') {
                         localStorage.removeItem('kwizySession');
-                        window.location.href = 'professeurs/inscription.html';
+                        window.location.href = 'public/professeurs/inscription.html';
                         return;
                     }
-                    window.location.href = 'professeurs/professeurs.html';
+                    window.location.href = 'public/professeurs/professeurs.html';
                 } else {
-                    window.location.href = 'eleves/classroom.html';
+                    window.location.href = 'public/eleves/classroom.html';
                 }
             }, 550);
         }
