@@ -969,7 +969,7 @@
 
         .dev-footer {
             position: relative;
-            padding: 8rem 4rem 2rem;
+            padding: 6rem 2rem 0;
             overflow: hidden;
             background: var(--surface);
             border-top: 1px solid var(--border);
@@ -980,70 +980,108 @@
             align-items: center;
         }
 
-        .footer-copy {
-            margin-top: 3rem;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            letter-spacing: 0.03em;
-            text-align: center;
-            z-index: 2;
-        }
-
         .footer-links {
             display: flex;
-            gap: 4rem;
-            margin-bottom: 8rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2.5rem 3.5rem;
+            margin-bottom: 3rem;
             z-index: 2;
             position: relative;
         }
 
-        .footer-links a {
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-muted);
-            text-decoration: none;
-            transition: color 0.3s;
-            display: flex;
-            flex-direction: column;
+        .footer-github-cta {
+            margin: 0.5rem 0 2rem;
+            z-index: 2;
+            position: relative;
+        }
+
+        .github-btn {
+            display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-        }
-
-        .footer-links a::after {
-            content: '';
-            width: 4px;
-            height: 4px;
-            background: var(--blue);
-            border-radius: 50%;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s ease;
-        }
-
-        .footer-links a:hover {
+            gap: 0.65rem;
+            padding: 0.75rem 1.6rem;
+            border-radius: 9999px;
+            background: rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border);
             color: var(--text);
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-decoration: none;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
         }
 
-        .footer-links a:hover::after {
-            opacity: 1;
-            transform: translateY(0);
+        .github-btn i {
+            font-size: 1.15rem;
+            transition: transform 0.3s ease;
+        }
+
+        .github-btn .gh-badge {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            padding: 0.15rem 0.5rem;
+            background: var(--blue);
+            color: #fff;
+            border-radius: 9999px;
+        }
+
+        .github-btn:hover {
+            background: var(--text);
+            color: var(--surface);
+            border-color: var(--text);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .github-btn:hover i {
+            transform: rotate(8deg) scale(1.1);
+        }
+
+        .dark .github-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .dark .github-btn:hover {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+            box-shadow: 0 8px 30px rgba(255, 255, 255, 0.2);
+        }
+
+        .footer-copy {
+            margin-bottom: 2rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+            text-align: center;
+            z-index: 2;
+            position: relative;
         }
 
         .massive-text {
-            font-size: 14vw;
-            font-weight: 800;
-            line-height: 0.8;
-            letter-spacing: 0;
+            font-size: clamp(4rem, 16vw, 15rem);
+            font-weight: 900;
+            line-height: 0.72;
+            letter-spacing: -0.03em;
             color: var(--text);
-            opacity: 0.16;
+            opacity: 0.12;
             pointer-events: auto;
             user-select: none;
             text-align: center;
             width: 100%;
-            margin-bottom: 2rem;
-            transform: scale(1);
+            margin-top: 1rem;
+            margin-bottom: 0;
+            padding-bottom: 0;
+            z-index: 1;
+            transform: translateY(6%);
         }
 
         .massive-text span {
@@ -1852,16 +1890,27 @@
         </div>
     </section> <!-- DEVSTUDIO FOOTER -->
     <footer class="dev-footer">
+        <!-- Liens de navigation Espace -->
         <div class="footer-links">
             <a id="footer-prof" href="../professeurs/professeurs.html">Espace Professeurs</a>
             <a id="footer-eleves" href="../eleves/classroom.html">Espace Élèves</a>
             <a id="footer-join" href="../professeurs/inscription.html">Inscription</a>
-            <a id="footer-github" href="https://github.com/Jul1-art/Kwizy" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:0.5rem;">
-                <i class="fab fa-github" style="font-size:1.15rem;"></i> Projet GitHub
+        </div>
+
+        <!-- Bouton GitHub placé entre les Espaces et le Copyright -->
+        <div class="footer-github-cta">
+            <a href="https://github.com/Jul1-art/Kwizy" target="_blank" rel="noopener noreferrer" class="github-btn" title="Voir le code source sur GitHub">
+                <i class="fab fa-github"></i>
+                <span>Code Source sur GitHub</span>
+                <span class="gh-badge">v2.0</span>
             </a>
         </div>
-        <div class="massive-text reveal-on-scroll"><span>K</span><span>W</span><span>I</span><span>Z</span><span>Y</span></div>
+
+        <!-- Copyright -->
         <div class="footer-copy">© 2026 Kwizy — Open Source (Apache 2.0)</div>
+
+        <!-- Grand texte KWIZY collé en bas de l'écran -->
+        <div class="massive-text reveal-on-scroll"><span>K</span><span>W</span><span>I</span><span>Z</span><span>Y</span></div>
     </footer>
     <script> document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
