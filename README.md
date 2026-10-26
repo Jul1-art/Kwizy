@@ -80,6 +80,34 @@ Kwizy/
 
 ---
 
+## 🤝 Contributing & Open Source Community
+
+Kwizy is an **open source** initiative under the Apache 2.0 license. Everyone is wholeheartedly welcome and encouraged to:
+- **Fork** this repository and build their own custom extensions or adaptations.
+- **Modify, tweak, and experiment** with features (UI, anti-cheating, AI models, custom question formats).
+- **Submit Pull Requests (PRs)** to suggest improvements, new features, or bug fixes.
+- **Open Issues** to report problems or share feature requests and pedagogical ideas.
+- **Use it freely** in schools, educational institutions, or private training environments.
+
+### Quick Workflow to Contribute
+
+1. **Fork** the repository to your own GitHub account.
+2. **Create a feature branch**:
+   ```bash
+   git checkout -b feature/my-awesome-improvement
+   ```
+3. **Commit your changes**:
+   ```bash
+   git commit -m "feat: add support for new question type"
+   ```
+4. **Push to your fork**:
+   ```bash
+   git push origin feature/my-awesome-improvement
+   ```
+5. **Open a Pull Request** against the main branch.
+
+---
+
 ## 📄 License
 
-This project is licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the [Apache License 2.0](LICENSE). You are free to use, modify, distribute, and sublicense this software according to the terms of the Apache 2.0 License.
