@@ -6917,7 +6917,124 @@ RÈGLES :
           }
         } catch (_) { /* A blocked or stale browser store must not block the form. */ }
       },
+      dropdown(id, label, items, selected, engine) {
+        const e = value => this.escape(value);
+        const fr = engine.getLang() !== 'en';
+        const choice = items.find(item => item.key === selected) || items[0];
+        const chevron = '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m5 7.5 5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        const icon = item => `<span class="tai-select-icon" data-tone="${item.key}" aria-hidden="true">${id === 'kwizy-ai-difficulty'
+          ? `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="14" width="4" height="6" rx="1"/><rect x="10" y="9" width="4" height="11" rx="1" opacity="${item.key === 'beginner' ? '.25' : '1'}"/><rect x="16" y="4" width="4" height="16" rx="1" opacity="${item.key === 'advanced' ? '1' : '.25'}"/></svg>`
+          : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${item.key === 'written' ? '<path d="m14 5 5 5M4 20l4-1 12-12a2.1 2.1 0 0 0-3-3L5 16l-1 4Z"/>' : item.key === 'mcq' ? '<circle cx="5" cy="6" r="2"/><path d="M11 6h9M3 12h4m4 0h9M3 18h4m4 0h9"/>' : '<rect x="3" y="3" width="7" height="7" rx="2"/><path d="M14 5h7m-7 4h4M3 16h18M3 20h12"/>'}</svg>`}</span>`;
+        const hint = item => e(fr ? item.fr : item.en);
+        return `<div class="tai-dropdown" data-select="${id}">
+          <label class="tai-label" id="${id}-label" for="${id}-button">${e(engine.t(label))}</label>
+          <select id="${id}" hidden tabindex="-1" aria-hidden="true" onchange="TeacherAIForm.sync()">${items.map(item => `<option data-key="${item.key}" value="${e(engine.t(item.label))}" ${item.key === choice.key ? 'selected' : ''}>${e(engine.t(item.label))}</option>`).join('')}</select>
+          <button type="button" class="tai-select-button" id="${id}-button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="${id}-list" aria-labelledby="${id}-label ${id}-value" aria-describedby="${id}-hint" onclick="TeacherAIForm.toggleDropdown('${id}')" onkeydown="TeacherAIForm.dropdownKey(event, '${id}')">
+            ${icon(choice)}<span class="tai-select-copy"><span class="tai-select-value" id="${id}-value">${e(engine.t(choice.label))}</span><span class="tai-select-hint" id="${id}-hint">${hint(choice)}</span></span><span class="tai-select-chevron">${chevron}</span>
+          </button>
+          <div class="tai-select-menu" id="${id}-list" role="listbox" aria-labelledby="${id}-label" hidden>${items.map((item, index) => `<div class="tai-select-option" id="${id}-option-${index}" role="option" aria-selected="${item.key === choice.key}" data-index="${index}" onclick="TeacherAIForm.chooseDropdown('${id}',${index})" onpointermove="TeacherAIForm.highlightDropdown('${id}',${index})">${icon(item)}<span class="tai-select-copy"><span class="tai-select-value">${e(engine.t(item.label))}</span><span class="tai-select-hint">${hint(item)}</span></span><svg class="tai-select-check" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`).join('')}</div>
+        </div>`;
+      },
+      updateDropdowns() {
+        document.querySelectorAll('.teacher-ai .tai-dropdown').forEach(root => {
+          const id = root.dataset.select;
+          const select = document.getElementById(id);
+          const selected = root.querySelector(`[data-index="${select.selectedIndex}"]`);
+          root.querySelectorAll('[role=option]').forEach(option => option.setAttribute('aria-selected', String(option === selected)));
+          document.getElementById(id + '-value').textContent = selected.querySelector('.tai-select-value').textContent;
+          document.getElementById(id + '-hint').textContent = selected.querySelector('.tai-select-hint').textContent;
+          root.querySelector('.tai-select-button .tai-select-icon').replaceWith(selected.querySelector('.tai-select-icon').cloneNode(true));
+        });
+      },
+      closeDropdown() {
+        const id = this.openDropdown;
+        this.openDropdown = null;
+        if (!id) return;
+        const button = document.getElementById(id + '-button');
+        if (button) { button.setAttribute('aria-expanded', 'false'); button.removeAttribute('aria-activedescendant'); }
+        const menu = document.getElementById(id + '-list');
+        if (menu) menu.hidden = true;
+      },
+      toggleDropdown(id) {
+        if (this.openDropdown === id) { this.closeDropdown(); return; }
+        this.closeDropdown();
+        const button = document.getElementById(id + '-button');
+        if (!button || button.matches(':disabled')) return;
+        const menu = document.getElementById(id + '-list');
+        const root = button.closest('.tai-dropdown');
+        root.classList.remove('tai-dropup');
+        menu.hidden = false;
+        let top = 0, bottom = window.innerHeight;
+        for (let parent = root.parentElement; parent; parent = parent.parentElement) {
+          if (/(auto|scroll|hidden|clip)/.test(getComputedStyle(parent).overflowY)) {
+            const bounds = parent.getBoundingClientRect();
+            top = Math.max(top, bounds.top); bottom = Math.min(bottom, bounds.bottom);
+          }
+        }
+        const bounds = button.getBoundingClientRect();
+        const below = bottom - bounds.bottom - 12, above = bounds.top - top - 12;
+        const up = below < Math.min(menu.scrollHeight, 240) && above > below;
+        root.classList.toggle('tai-dropup', up);
+        menu.style.setProperty('--tai-menu-bottom', (root.offsetHeight - button.offsetTop + 8) + 'px');
+        menu.style.maxHeight = Math.max(44, Math.min(320, up ? above : below)) + 'px';
+        this.openDropdown = id;
+        button.setAttribute('aria-expanded', 'true');
+        this.highlightDropdown(id, document.getElementById(id).selectedIndex);
+      },
+      highlightDropdown(id, index) {
+        if (this.openDropdown !== id) return;
+        const menu = document.getElementById(id + '-list');
+        const options = [...menu.querySelectorAll('[role=option]')];
+        this.activeOption = Math.max(0, Math.min(options.length - 1, index));
+        options.forEach((option, position) => option.classList.toggle('tai-option-active', position === this.activeOption));
+        document.getElementById(id + '-button').setAttribute('aria-activedescendant', options[this.activeOption].id);
+        options[this.activeOption].scrollIntoView({block:'nearest'});
+      },
+      chooseDropdown(id, index) {
+        const select = document.getElementById(id);
+        if (!select || select.matches(':disabled')) return;
+        select.selectedIndex = index;
+        select.dispatchEvent(new Event('change', {bubbles:true}));
+        this.closeDropdown();
+        document.getElementById(id + '-button').focus({preventScroll:true});
+      },
+      dropdownKey(event, id) {
+        const open = this.openDropdown === id;
+        if (event.key === 'Tab') { this.closeDropdown(); return; }
+        if (event.key === 'Escape') { event.preventDefault(); this.closeDropdown(); return; }
+        if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+          event.preventDefault();
+          if (!open) this.toggleDropdown(id);
+          const last = document.getElementById(id).options.length - 1;
+          this.highlightDropdown(id, event.key === 'Home' ? 0 : event.key === 'End' ? last : open ? this.activeOption + (event.key === 'ArrowDown' ? 1 : -1) : this.activeOption);
+        } else if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          if (open) this.chooseDropdown(id, this.activeOption); else this.toggleDropdown(id);
+        } else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          event.preventDefault();
+          if (!open) this.toggleDropdown(id);
+          this.optionSearch = Date.now() - (this.optionSearchTime || 0) < 600 ? (this.optionSearch || '') + event.key : event.key;
+          this.optionSearchTime = Date.now();
+          const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+          const index = [...document.getElementById(id).options].findIndex(option => normalize(option.textContent).startsWith(normalize(this.optionSearch)));
+          if (index !== -1) this.highlightDropdown(id, index);
+        }
+      },
+      bindDropdownEvents() {
+        if (this.dropdownEventsBound) return;
+        this.dropdownEventsBound = true;
+        document.addEventListener('pointerdown', event => {
+          const root = document.getElementById(this.openDropdown + '-button')?.closest('.tai-dropdown');
+          if (root && !root.contains(event.target)) this.closeDropdown();
+        });
+        document.addEventListener('focusin', event => {
+          const root = document.getElementById(this.openDropdown + '-button')?.closest('.tai-dropdown');
+          if (root && !root.contains(event.target)) this.closeDropdown();
+        });
+        window.addEventListener('resize', () => this.closeDropdown());
+      },
       render(engine) {
+        this.closeDropdown();
         this.restore(engine);
         const e = value => this.escape(value);
         const t = key => e(engine.t(key));
@@ -6926,11 +7043,10 @@ RÈGLES :
         const count = this.clamp(engine._formCount ?? 5);
         const prompt = String(engine._currentPrompt || '').slice(0, 4000);
         const key = localStorage.getItem('kwizy-mistral-key') || '';
-        const options = (items, selected) => items.map(([id, label]) => `<option data-key="${id}" value="${e(engine.t(label))}" ${selected === id ? 'selected' : ''}>${t(label)}</option>`).join('');
         const attachments = (engine._attachedFiles || []).map((file, index) => `<span class="tai-file">${e(file.name)}<button type="button" aria-label="${t('removeAttachment')} ${e(file.name)}" onclick="TeacherAIForm.removeAttachment(${index})">×</button></span>`).join('');
         return `
           <style>
-            .teacher-ai { --tai-bg:#f7f8fc; --tai-card:#fff; --tai-text:#192338; --tai-muted:#647084; --tai-line:#e3e7ef; --tai-accent:#315eea; --tai-tint:#edf2ff; color:var(--tai-text); width:100%; min-height:100%; background:var(--tai-bg); padding:clamp(18px,3vw,40px); border-radius:24px; font-family:Inter,system-ui,sans-serif; }
+            .teacher-ai { --tai-bg:#f7f8fc; --tai-card:#fff; --tai-text:#192338; --tai-muted:#647084; --tai-line:#e3e7ef; --tai-accent:#315eea; --tai-tint:#edf2ff; container:teacher-ai / inline-size; color:var(--tai-text); width:100%; min-height:100%; background:var(--tai-bg); padding:clamp(18px,3vw,40px); border-radius:24px; font-family:Inter,system-ui,sans-serif; }
             .dark .teacher-ai { --tai-bg:#10131b; --tai-card:#191e29; --tai-text:#edf1fa; --tai-muted:#a6b1c5; --tai-line:#303949; --tai-accent:#91adff; --tai-tint:#252f4e; }
             .teacher-ai * { box-sizing:border-box; }
             .teacher-ai button,.teacher-ai input,.teacher-ai textarea,.teacher-ai select { font:inherit; }
@@ -6962,7 +7078,32 @@ RÈGLES :
             .tai-chip:hover,.tai-chip[aria-pressed=true] { background:var(--tai-tint); color:var(--tai-accent); border-color:var(--tai-accent); }
             .tai-file { display:inline-flex; align-items:center; gap:8px; overflow-wrap:anywhere; font-size:12px; padding:6px 9px; background:var(--tai-tint); border-radius:7px; }
             .tai-file button { background:none; border:0; color:var(--tai-text); font-size:18px!important; }
-            .tai-settings { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+            .tai-settings { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); align-items:start; gap:18px; }
+            .tai-dropdown { position:relative; min-width:0; }
+            .tai-select-button { width:100%; min-height:68px; display:flex; align-items:center; gap:11px; text-align:left; padding:12px; border:1px solid var(--tai-line); border-radius:12px; background:var(--tai-card); color:var(--tai-text); box-shadow:0 2px 4px #19233804; transition:border-color .15s,box-shadow .15s; }
+            .tai-select-button:hover:not(:disabled) { border-color:var(--tai-accent); }
+            .tai-select-button[aria-expanded=true] { border-color:var(--tai-accent); box-shadow:0 0 0 3px var(--tai-tint); }
+            .tai-select-icon { width:34px; height:34px; flex-shrink:0; border-radius:10px; background:var(--tai-tint); color:var(--tai-accent); display:grid; place-items:center; }
+            .tai-select-icon svg { width:21px; height:21px; }
+            .tai-select-icon[data-tone=beginner] { background:#e8f7ef; color:#167149; }
+            .tai-select-icon[data-tone=intermediate] { background:#fff4d9; color:#8c6400; }
+            .tai-select-icon[data-tone=advanced] { background:#fdebf0; color:#b23259; }
+            .dark .tai-select-icon[data-tone=beginner] { background:#183e32; color:#81dfb3; }
+            .dark .tai-select-icon[data-tone=intermediate] { background:#44381b; color:#f3ce73; }
+            .dark .tai-select-icon[data-tone=advanced] { background:#482539; color:#f5a5c2; }
+            .tai-select-copy { display:grid; gap:4px; flex:1; min-width:0; }
+            .tai-select-value { font-size:13px; line-height:1.4; font-weight:650; }
+            .tai-select-hint { font-size:11px; line-height:1.45; color:var(--tai-muted); }
+            .tai-select-chevron { width:18px; height:18px; flex-shrink:0; color:var(--tai-muted); transition:transform .15s; }
+            .tai-select-button[aria-expanded=true] .tai-select-chevron { transform:rotate(180deg); }
+            .tai-select-menu { position:absolute; z-index:60; top:calc(100% + 8px); left:0; right:0; padding:6px; overflow-y:auto; overscroll-behavior:contain; border:1px solid var(--tai-line); border-radius:14px; background:var(--tai-card); box-shadow:0 16px 40px #101d3a26,0 3px 8px #101d3a0a; }
+            .tai-dropup .tai-select-menu { top:auto; bottom:var(--tai-menu-bottom); }
+            .tai-select-option { display:flex; align-items:center; gap:10px; padding:10px; min-height:64px; border-radius:9px; cursor:pointer; color:var(--tai-text); }
+            .tai-select-option + .tai-select-option { margin-top:3px; }
+            .tai-select-option[aria-selected=true] { background:var(--tai-tint); }
+            .tai-select-option.tai-option-active { outline:1px solid var(--tai-accent); outline-offset:-1px; }
+            .tai-select-check { flex-shrink:0; width:18px; height:18px; color:var(--tai-accent); visibility:hidden; }
+            .tai-select-option[aria-selected=true] .tai-select-check { visibility:visible; }
             .tai-count-row { border-top:1px solid var(--tai-line); margin-top:22px; padding-top:20px; display:flex; justify-content:space-between; align-items:center; gap:16px; }
             .tai-stepper { display:flex; align-items:center; border:1px solid var(--tai-line); border-radius:11px; padding:4px; background:var(--tai-bg); }
             .tai-stepper button { width:32px; height:34px; border:0; border-radius:7px; background:var(--tai-card); color:var(--tai-text); font-size:20px!important; }
@@ -6970,7 +7111,10 @@ RÈGLES :
             .tai-stepper input::-webkit-inner-spin-button { appearance:none; }
             .tai-presets { display:flex; gap:6px; margin-top:12px; justify-content:flex-end; }
             .tai-advanced { margin-top:22px; border-top:1px solid var(--tai-line); padding-top:18px; }
-            .tai-advanced summary { font-size:13px; font-weight:650; cursor:pointer; }
+            .tai-advanced summary { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:46px; padding:12px; border-radius:10px; background:var(--tai-bg); font-size:13px; font-weight:650; cursor:pointer; list-style:none; }
+            .tai-advanced summary::-webkit-details-marker { display:none; }
+            .tai-advanced summary::after { content:''; width:8px; height:8px; flex-shrink:0; border:solid var(--tai-muted); border-width:0 1.5px 1.5px 0; transform:rotate(45deg); margin:0 3px 4px 0; }
+            .tai-advanced[open] summary::after { transform:rotate(225deg); margin-top:7px; }
             .tai-toggle { display:flex; justify-content:space-between; align-items:center; gap:18px; padding-top:18px; cursor:pointer; }
             .tai-toggle strong { display:block; font-size:13px; font-weight:600; }
             .tai-toggle small { display:block; color:var(--tai-muted); font-size:12px; margin-top:4px; line-height:1.5; }
@@ -7008,6 +7152,8 @@ RÈGLES :
             .tai-preview li p { margin:8px 0 0; color:var(--tai-muted); line-height:1.6; }
             @media(max-width:900px) { .tai-grid { grid-template-columns:1fr; } .tai-aside { position:static; grid-template-columns:1fr 1fr; } .tai-submit { grid-column:1/-1; } }
             @media(max-width:560px) { .teacher-ai { padding:18px 12px 28px; border-radius:16px; } .tai-heading { margin:22px 4px; } .tai-card { padding:18px; } .tai-settings,.tai-aside { grid-template-columns:1fr; } .tai-prompt-footer { flex-wrap:wrap; } .tai-count-row { gap:8px; } .tai-key-header { flex-wrap:wrap; } }
+            @container teacher-ai (max-width:800px) { .tai-grid { grid-template-columns:1fr; } .tai-aside { position:static; grid-template-columns:1fr 1fr; } .tai-submit { grid-column:1/-1; } }
+            @container teacher-ai (max-width:520px) { .tai-settings,.tai-aside { grid-template-columns:1fr; } .tai-key-header { flex-wrap:wrap; } .tai-prompt-footer { flex-wrap:wrap; } }
             @media(prefers-reduced-motion:reduce) { .teacher-ai * { transition:none!important; } }
           </style>
           <section class="teacher-ai" aria-labelledby="tai-title">
@@ -7038,8 +7184,16 @@ RÈGLES :
                     <section class="tai-card">
                       <h2 class="tai-section-title"><span class="tai-step">02</span> ${text('Les réglages pédagogiques', 'Learning settings')}</h2>
                       <div class="tai-settings">
-                        <div><label class="tai-label" for="kwizy-ai-difficulty">${t('difficulty')}</label><select id="kwizy-ai-difficulty" onchange="TeacherAIForm.sync()">${options([['beginner','difficultyBeginner'],['intermediate','difficultyIntermediate'],['advanced','difficultyAdvanced']], engine._formDifficulty || 'intermediate')}</select></div>
-                        <div><label class="tai-label" for="kwizy-ai-type">${t('format')}</label><select id="kwizy-ai-type" onchange="TeacherAIForm.sync()">${options([['mixed','mixed'],['mcq','singleMcq'],['written','writtenAnswer']], engine._formType || 'mixed')}</select></div>
+                        ${this.dropdown('kwizy-ai-difficulty', 'difficulty', [
+                          {key:'beginner',label:'difficultyBeginner',fr:'Les bases, pas à pas',en:'Build the foundations'},
+                          {key:'intermediate',label:'difficultyIntermediate',fr:'Appliquer et relier les notions',en:'Apply and connect ideas'},
+                          {key:'advanced',label:'difficultyAdvanced',fr:'Analyser et approfondir',en:'Analyse and explore further'}
+                        ], engine._formDifficulty || 'intermediate', engine)}
+                        ${this.dropdown('kwizy-ai-type', 'format', [
+                          {key:'mixed',label:'mixed',fr:'Varier QCM et réponses écrites',en:'Combine choices and written answers'},
+                          {key:'mcq',label:'singleMcq',fr:'Une seule bonne réponse',en:'One correct answer per question'},
+                          {key:'written',label:'writtenAnswer',fr:'Des réponses rédigées',en:'Students write their own answers'}
+                        ], engine._formType || 'mixed', engine)}
                       </div>
                       <div class="tai-count-row"><div><label class="tai-label" for="kwizy-ai-count">${t('numberOfQuestions')}</label><p class="tai-help">${text('De 1 à 25 questions', 'From 1 to 25 questions')}</p></div><div class="tai-stepper"><button type="button" id="tai-less" aria-label="${text('Retirer une question', 'Remove one question')}" onclick="TeacherAIForm.count(-1)" ${count === 1 ? 'disabled' : ''}>−</button><input type="number" id="kwizy-ai-count" min="1" max="25" step="1" value="${count}" onchange="this.value=TeacherAIForm.clamp(this.value); TeacherAIForm.sync()"><button type="button" id="tai-more" aria-label="${text('Ajouter une question', 'Add one question')}" onclick="TeacherAIForm.count(1)" ${count === 25 ? 'disabled' : ''}>+</button></div></div>
                       <div class="tai-presets">${[5,10,15].map(n => `<button type="button" class="tai-chip" data-count="${n}" aria-pressed="${count === n}" onclick="TeacherAIForm.setCount(${n})">${n} ${t('questionsCount')}</button>`).join('')}</div>
@@ -7078,6 +7232,7 @@ RÈGLES :
         engine._formType = document.getElementById('kwizy-ai-type').selectedOptions[0].dataset.key;
         engine._formTraps = document.getElementById('kwizy-ai-traps').checked;
         engine._formExplain = document.getElementById('kwizy-ai-explain').checked;
+        this.updateDropdowns();
         if (previous !== JSON.stringify([engine._currentPrompt, engine._formCount, engine._formDifficulty, engine._formType, engine._formTraps, engine._formExplain])) {
           engine._lastGenerated = null;
           document.getElementById('ai-preview-panel')?.classList.add('hidden');
@@ -7177,6 +7332,7 @@ RÈGLES :
       afterRender() {
         const form = document.querySelector('.teacher-ai form');
         if (!form) return;
+        this.bindDropdownEvents();
         if (this.busy) form.setAttribute('aria-busy', 'true');
         if (KwizyAIEngine._lastGenerated) this.preview(KwizyAIEngine._lastGenerated.data);
       },
