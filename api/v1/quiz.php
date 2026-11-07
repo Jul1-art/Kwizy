@@ -251,7 +251,7 @@ try {
 
     if ($method === 'POST' && isset($_GET['restore_id'])) {
         $stmt = $pdo->prepare("UPDATE quizs SET statut = 'brouillon', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND professeur_id = ?");
-        $stmt->execute([$_GET['restore_id'], $_GET['teacher_id']]);
+        $stmt->execute([$_GET['restore_id'], $teacherId]);
         echo json_encode(['success' => true, 'message' => 'Quiz restauré.']);
         exit;
     }
