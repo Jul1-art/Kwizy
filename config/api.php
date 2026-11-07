@@ -18,7 +18,7 @@ function kwizy_start_session(): void {
     session_start();
 }
 
-function kwizy_json_error(int $status, string $message): never {
+function kwizy_json_error(int $status, string $message): void {
     http_response_code($status);
     echo json_encode(['success' => false, 'message' => $message], JSON_UNESCAPED_UNICODE);
     exit;
