@@ -4,7 +4,6 @@
  * CRUD complet des quiz pour les professeurs.
  */
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
@@ -14,8 +13,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../../config/api.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
+$isPublicLookup = ($method === 'GET' && isset($_GET['share_code']));
+$teacherId = $isPublicLookup ? null : kwizy_require_teacher();
 $data   = [];
 
 if ($method === 'POST') {
@@ -60,8 +62,8 @@ function parseOptions($qDb) {
 
 try {
     // ── 1. Lister les quiz d'un professeur ───────────────────────────────
-    if ($method === 'GET' && isset($_GET['teacher_id'])) {
-        $profId = $_GET['teacher_id'];
+    if ($method === 'GET' && !$isPublicLookup) {
+        $profId = $teacherId;
 
         $stmt = $pdo->prepare("SELECT * FROM quizs WHERE professeur_id = ? ORDER BY created_at DESC");
         $stmt->execute([$profId]);
@@ -131,9 +133,7 @@ try {
                     'points' => (int)$qDb['points'],
                     'image' => $qDb['image'],
                     'options' => $opts['items'],
-                    'correctOptionIndex' => $opts['correctOptionIndex'],
-                    'correctOptionIndexes' => $opts['correctOptionIndexes'],
-                    'expectedAnswer' => $opts['expectedAnswer']
+                    // Correct answers are private and stay on the server.
                 ];
             }
             $result = [
@@ -158,11 +158,7 @@ try {
 
     // ── 2. Créer / Mettre à jour un quiz (POST) ──────────────────────────
     if ($method === 'POST' && !isset($_GET['delete_permanent']) && !isset($_GET['trash_id']) && !isset($_GET['restore_id'])) {
-        $profId = $data['teacher_id'] ?? null;
-        if (!$profId) {
-            echo json_encode(['success' => false, 'message' => 'teacher_id manquant.']);
-            exit;
-        }
+        $profId = $teacherId;
 
         $id       = $data['id']       ?? null;
         $title    = $data['title']    ?? 'Nouveau Quiz';
@@ -237,7 +233,7 @@ try {
             echo json_encode($data);
             exit;
 
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             error_log("Save Quiz Error: " . $e->getMessage());
             echo json_encode(['success' => false, 'message' => 'Erreur technique lors de la sauvegarde.']);
@@ -248,7 +244,7 @@ try {
     // ── 3. Mise à la corbeille & Suppression ─────────────────────────────
     if ($method === 'POST' && isset($_GET['trash_id'])) {
         $stmt = $pdo->prepare("UPDATE quizs SET statut = 'corbeille', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND professeur_id = ?");
-        $stmt->execute([$_GET['trash_id'], $_GET['teacher_id']]);
+        $stmt->execute([$_GET['trash_id'], $teacherId]);
         echo json_encode(['success' => true, 'message' => 'Quiz mis à la corbeille.']);
         exit;
     }
@@ -261,12 +257,20 @@ try {
     }
 
     if ($method === 'POST' && isset($_GET['delete_permanent'])) {
-        // Supprimer d'abord les questions associées pour être propre
-        $stmtQ = $pdo->prepare("DELETE FROM questions WHERE quiz_id = ?");
-        $stmtQ->execute([$_GET['id']]);
-        
-        $stmt = $pdo->prepare("DELETE FROM quizs WHERE id = ?");
-        $stmt->execute([$_GET['id']]);
+        $quizId = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
+        if (!$quizId) kwizy_json_error(400, 'Identifiant de quiz invalide.');
+        kwizy_require_quiz_owner($pdo, (int) $quizId, $teacherId);
+        $pdo->beginTransaction();
+        try {
+            $stmtQ = $pdo->prepare('DELETE FROM questions WHERE quiz_id = ?');
+            $stmtQ->execute([$quizId]);
+            $stmt = $pdo->prepare('DELETE FROM quizs WHERE id = ? AND professeur_id = ?');
+            $stmt->execute([$quizId, $teacherId]);
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
         echo json_encode(['success' => true]);
         exit;
     }
