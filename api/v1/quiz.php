@@ -113,7 +113,7 @@ try {
         // ── 1b. Get quiz by share_code ───────────────────────────────
         if ($method === 'GET' && isset($_GET['share_code'])) {
             $code = $_GET['share_code'];
-            $stmt = $pdo->prepare('SELECT * FROM quizs WHERE code = ?');
+            $stmt = $pdo->prepare("SELECT * FROM quizs WHERE code = ? AND statut IN ('publie', 'lance')");
             $stmt->execute([$code]);
             $quiz = $stmt->fetch();
             if (!$quiz) {
@@ -185,13 +185,17 @@ try {
                 $curStmt = $pdo->prepare('SELECT statut, code FROM quizs WHERE id = ? AND professeur_id = ?');
                 $curStmt->execute([$id, $profId]);
                 $current = $curStmt->fetch();
-                if ($current) {
-                    if ($current['statut'] === 'lance' && $statut === 'publie') {
+                if (!$current) {
+                    $pdo->rollBack();
+                    http_response_code(404);
+                    echo json_encode(['success' => false, 'message' => 'Quiz introuvable.']);
+                    exit;
+                }
+                if ($current['statut'] === 'lance' && $statut === 'publie') {
                         $statut = 'lance';
                     }
-                    if (!empty($current['code'])) {
-                        $shareCode = $current['code'];
-                    }
+                if (!empty($current['code'])) {
+                    $shareCode = $current['code'];
                 }
 
                 $stmt = $pdo->prepare('UPDATE quizs SET titre = ?, folderId = ?, code = ?, statut = ?, settings = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND professeur_id = ?');
