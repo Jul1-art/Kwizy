@@ -16,7 +16,7 @@ Kwizy is a **100% open source**, **100% free** interactive classroom and quiz pl
   - Interactive pedagogical chat assistant for quiz reports.
 - **Local-first & Offline-ready**: Accounts, quizzes and results are stored in the browser (localStorage) — no account leaks, no external server, works even offline thanks to the Service Worker.
 - **Responsive & Modern UI**: Built with a sleek dark/light theme using modern CSS and Tailwind styling.
-- **Windows Desktop App**: Downloadable portable/installer .exe built with Electron ([download the beta](https://github.com/Jul1-art/Kwizy/releases/download/v1.0.0-beta/Kwizy-Portable.exe)).
+- **Windows Desktop App**: Downloadable portable/installer .exe built with Electron ([download the beta](https://github.com/Jul1-art/Kwizy/releases/download/v1.0.0-beta/Kwizy.exe)).
 
 ---
 
@@ -34,7 +34,7 @@ Nothing to configure: teachers create a local account, students join with a quiz
 
 A native Windows wrapper of the web app (Electron) is available on the [Releases page](https://github.com/Jul1-art/Kwizy/releases) and as a direct download from the [homepage](https://jul1-art.github.io/Kwizy/):
 
-- **`Kwizy-Portable.exe`** — no installation, run it from anywhere (great for shared school computers without admin rights).
+- **`Kwizy.exe`** — portable, no installation, run it from anywhere (great for shared school computers without admin rights).
 - **`Kwizy-Setup.exe`** — classic one-click installer.
 
 > ℹ️ Both are currently distributed as **beta** builds. Bugs and feedback can be reported in [Issues](https://github.com/Jul1-art/Kwizy/issues).

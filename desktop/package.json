@@ -44,7 +44,7 @@
       ]
     },
     "portable": {
-      "artifactName": "Kwizy-Portable.${ext}"
+      "artifactName": "Kwizy.${ext}"
     },
     "nsis": {
       "oneClick": true,
