@@ -1,13 +1,13 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/api.php';
+kwizy_start_session();
 /**
  * KWIZY - Auth API (professeurs/)
  * Gère : register, login, update_account, delete_account, logout, upload_image
  */
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../../config/db.php';
-require_once '../../models/User.php';
+require_once __DIR__ . '/../../models/User.php';
 
 $raw  = file_get_contents('php://input');
 $data = json_decode($raw, true) ?? $_POST;
@@ -40,7 +40,11 @@ try {
 
         if (User::create($nom, $email, $password)) {
             $user = User::findByEmail($email);
+            session_regenerate_id(true);
+            session_regenerate_id(true);
             $_SESSION['user_id']  = $user['id'];
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
             $_SESSION['user_nom'] = $user['nom'];
 
             echo json_encode([
@@ -96,7 +100,8 @@ try {
     }
 
     if ($action === 'update_account') {
-        $id            = $data['id']          ?? null;
+        kwizy_require_teacher();
+        $id            = $_SESSION['user_id'] ?? null;
         $nom           = trim($data['name']   ?? '');
         $email         = trim($data['email']  ?? '');
         $nickname      = trim($data['nickname'] ?? '');
@@ -135,7 +140,8 @@ try {
     }
 
     if ($action === 'delete_account') {
-        $id = $data['id'] ?? null;
+        kwizy_require_teacher();
+        $id = $_SESSION['user_id'] ?? null;
         if (!$id) {
             echo json_encode(['success' => false, 'message' => 'ID manquant.']);
             exit;
@@ -149,13 +155,19 @@ try {
     }
 
     if ($action === 'logout') {
+        $_SESSION = [];
+        if (ini_get('session.use_cookies')) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+        }
         session_destroy();
         echo json_encode(['success' => true, 'message' => 'Déconnexion réussie.']);
         exit;
     }
 
     if ($action === 'get_account') {
-        $id = $_GET['id'] ?? $data['id'] ?? $_SESSION['user_id'] ?? null;
+        kwizy_require_teacher();
+        $id = $_SESSION['user_id'] ?? null;
         if (!$id) {
             echo json_encode(['success' => false, 'message' => 'ID manquant.']);
             exit;
@@ -182,13 +194,14 @@ try {
     }
 
     if ($action === 'upload_image') {
-        echo json_encode(['success' => true, 'imageUrl' => 'dummy_url.png']);
+        http_response_code(501);
+        echo json_encode(['success' => false, 'message' => 'Le stockage des images n’est pas configuré.']);
         exit;
     }
 
     echo json_encode(['success' => false, 'message' => 'Action non reconnue.']);
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
     http_response_code(500);
     error_log("Auth Error: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Une erreur imprévue est survenue.']);
