@@ -146,8 +146,19 @@ try {
             echo json_encode(['success' => false, 'message' => 'ID manquant.']);
             exit;
         }
+        $existing = User::findById($id);
+        $password = (string) ($data['password'] ?? '');
+        if (!$existing || $password === '' || !password_verify($password, $existing['mot_de_passe'])) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Mot de passe incorrect.']);
+            exit;
+        }
         if (User::delete($id)) {
             $_SESSION = [];
+            if (ini_get('session.use_cookies')) {
+                $params = session_get_cookie_params();
+                setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+            }
             session_destroy();
             echo json_encode(['success' => true, 'message' => 'Compte supprimé.']);
         } else {
