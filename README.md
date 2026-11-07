@@ -34,10 +34,9 @@ Nothing to configure: teachers create a local account, students join with a quiz
 
 A native Windows wrapper of the web app (Electron) is available on the [Releases page](https://github.com/Jul1-art/Kwizy/releases) and as a direct download from the [homepage](https://jul1-art.github.io/Kwizy/):
 
-- **`Kwizy.exe`** — portable, no installation, run it from anywhere (great for shared school computers without admin rights).
-- **`Kwizy-Setup.exe`** — classic one-click installer.
+- **`Kwizy.exe`** — one-click installer: installs Kwizy as a real Windows app (Start Menu shortcut + built-in uninstaller, cleanly removed from Windows Settings).
 
-> ℹ️ Both are currently distributed as **beta** builds. Bugs and feedback can be reported in [Issues](https://github.com/Jul1-art/Kwizy/issues).
+> ℹ️ The desktop app is currently distributed as a **beta** build. Bugs and feedback can be reported in [Issues](https://github.com/Jul1-art/Kwizy/issues).
 
 ---
 

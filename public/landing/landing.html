@@ -1169,35 +1169,6 @@
 
         .download-btn:active { transform: scale(0.98); }
 
-        .download-alt {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.65rem;
-            padding: 1.05rem 1.9rem;
-            border-radius: 9999px;
-            background: rgba(0, 0, 0, 0.04);
-            border: 1px solid var(--border);
-            color: var(--text);
-            font-size: 0.9rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            text-decoration: none;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .download-alt i { font-size: 1.05rem; opacity: 0.8; }
-
-        .download-alt:hover {
-            background: var(--text);
-            color: var(--surface);
-            border-color: var(--text);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-        }
-
         .download-hint {
             font-size: 0.78rem;
             font-weight: 600;
@@ -1212,18 +1183,6 @@
             border-color: rgba(0, 112, 255, 0.25);
         }
 
-        .dark .download-alt {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .dark .download-alt:hover {
-            background: #ffffff;
-            color: #0a0a0a;
-            border-color: #ffffff;
-        }
-
         @media (max-width: 640px) {
             .download-section {
                 padding: 5rem 1.25rem;
@@ -1232,11 +1191,6 @@
             .download-btn {
                 padding: 0.95rem 1.5rem;
                 font-size: 0.95rem;
-            }
-
-            .download-alt {
-                padding: 0.85rem 1.4rem;
-                font-size: 0.82rem;
             }
         }
 
@@ -2051,23 +2005,20 @@
                 id="down-badge">Application Windows • Beta</span></div>
         <h2 class="section-title reveal-on-scroll reveal-delay-1" id="down-title">Kwizy, maintenant <span
                 style="color: var(--blue)">sur Windows</span>.</h2>
-        <p class="download-desc reveal-on-scroll reveal-delay-2" id="down-desc">Profitez de Kwizy dans une véritable
-            application
-            Windows : fenêtre dédiée, aucune barre d'adresse, aucune installation nécessaire — et toujours 100%
-            gratuit.
+        <p class="download-desc reveal-on-scroll reveal-delay-2" id="down-desc">Profitez de Kwizy dans une
+            véritable
+            application Windows : fenêtre dédiée, installation en un clic, désinstallation propre depuis les
+            paramètres Windows — et toujours 100% gratuit.
         </p>
         <div class="download-actions reveal-on-scroll reveal-delay-3">
             <a href="https://github.com/Jul1-art/Kwizy/releases/download/v1.0.0-beta/Kwizy.exe" class="download-btn">
                 <i class="fab fa-windows"></i> <span id="down-btn-text">Télécharger pour Windows</span> <span
                     class="download-chip" id="down-chip">Kwizy.exe • v1.0.0-beta</span>
             </a>
-            <a href="https://github.com/Jul1-art/Kwizy/releases/download/v1.0.0-beta/Kwizy-Setup.exe"
-                class="download-alt">
-                <i class="fas fa-download"></i> <span id="down-alt-text">ou l'installeur Kwizy-Setup.exe</span>
-            </a>
         </div>
-        <p class="download-hint reveal-on-scroll reveal-delay-4" id="down-hint">Windows 10/11 • 64 bits • 100% gratuit
-            • open source</p>
+        <p class="download-hint reveal-on-scroll reveal-delay-4" id="down-hint">Windows 10/11 • 64 bits • installation
+            en un
+            clic • open source</p>
     </section> <!-- TEAM SECTION -->
     <section class="team-section">
         <div class="team-glow left"></div>
@@ -2179,11 +2130,10 @@
                     feature4Desc: "Tableau de bord minimaliste présentant les données d'apprentissage sous forme de visualisations claires et actionnables.",
                     downBadge: "Application Windows • Beta",
                     downTitle: "Kwizy, maintenant <span style='color: var(--blue)'>sur Windows</span>.",
-                    downDesc: "Profitez de Kwizy dans une véritable application Windows : fenêtre dédiée, aucune barre d'adresse, aucune installation nécessaire — et toujours 100% gratuit.",
+                    downDesc: "Profitez de Kwizy dans une véritable application Windows : fenêtre dédiée, installation en un clic, désinstallation propre depuis les paramètres Windows — et toujours 100% gratuit.",
                     downBtn: "Télécharger pour Windows",
                     downChip: "Kwizy.exe • v1.0.0-beta",
-                    downAlt: "ou l'installeur Kwizy-Setup.exe",
-                    downHint: "Windows 10/11 • 64 bits • 100% gratuit • open source",
+                    downHint: "Windows 10/11 • 64 bits • installation en un clic • open source",
                     navDownload: "Télécharger",
                     footerDownload: "Télécharger pour Windows",
                     teamTitle: "Créé par des <span style='color: var(--blue)'>élèves</span>.",
@@ -2214,11 +2164,10 @@
                     feature4Desc: "Minimal dashboard showing learning data with clear, actionable visuals.",
                     downBadge: "Windows App • Beta",
                     downTitle: "Kwizy, now <span style='color: var(--blue)'>on Windows</span>.",
-                    downDesc: "Enjoy Kwizy in a real Windows application: a dedicated window, no address bar, no installation required — and always 100% free.",
+                    downDesc: "Enjoy Kwizy in a real Windows application: a dedicated window, one-click setup, clean uninstall from Windows Settings — and always 100% free.",
                     downBtn: "Download for Windows",
                     downChip: "Kwizy.exe • v1.0.0-beta",
-                    downAlt: "or the Kwizy-Setup.exe installer",
-                    downHint: "Windows 10/11 • 64-bit • 100% free • open source",
+                    downHint: "Windows 10/11 • 64-bit • one-click setup • open source",
                     navDownload: "Download",
                     footerDownload: "Download for Windows",
                     teamTitle: "Built by <span style='color: var(--blue)'>students</span>.",
@@ -2275,7 +2224,6 @@
                 document.getElementById('down-desc').textContent = t.downDesc;
                 document.getElementById('down-btn-text').textContent = t.downBtn;
                 document.getElementById('down-chip').textContent = t.downChip;
-                document.getElementById('down-alt-text').textContent = t.downAlt;
                 document.getElementById('down-hint').textContent = t.downHint;
                 const ctaProfs = document.getElementById('cta-profs');
                 const ctaEleves = document.getElementById('cta-eleves');

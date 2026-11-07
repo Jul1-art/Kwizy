@@ -30,12 +30,6 @@
       "icon": "build/icon.png",
       "target": [
         {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
           "target": "nsis",
           "arch": [
             "x64"
@@ -43,14 +37,11 @@
         }
       ]
     },
-    "portable": {
-      "artifactName": "Kwizy.${ext}"
-    },
     "nsis": {
       "oneClick": true,
       "perMachine": false,
       "deleteAppDataOnUninstall": true,
-      "artifactName": "Kwizy-Setup.${ext}"
+      "artifactName": "Kwizy.${ext}"
     }
   },
   "allowScripts": {

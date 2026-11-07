@@ -66,7 +66,7 @@ Kwizy/
 cd desktop && npm install && npm run dist
 ```
 
-Artefacts : `Kwizy.exe` (sans installation) et `Kwizy-Setup.exe` (installeur NSIS), publiés sur [GitHub Releases](https://github.com/Jul1-art/Kwizy/releases).
+Artefact : `Kwizy.exe` — installeur NSIS en un clic (raccourci menu Démarrer + désinstalleur intégré), publié sur [GitHub Releases](https://github.com/Jul1-art/Kwizy/releases).
 
 ---
 *Dernière mise à jour : Novembre 2026 — Migration local-first 100% open source.*
