@@ -41,9 +41,7 @@ try {
         if (User::create($nom, $email, $password)) {
             $user = User::findByEmail($email);
             session_regenerate_id(true);
-            session_regenerate_id(true);
             $_SESSION['user_id']  = $user['id'];
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
             $_SESSION['user_nom'] = $user['nom'];
 
@@ -77,7 +75,9 @@ try {
         $user = User::findByEmail($email);
 
         if ($user && password_verify($password, $user['mot_de_passe'])) {
+            session_regenerate_id(true);
             $_SESSION['user_id']  = $user['id'];
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
             $_SESSION['user_nom'] = $user['nom'];
             echo json_encode([
                 'success' => true,
@@ -147,6 +147,8 @@ try {
             exit;
         }
         if (User::delete($id)) {
+            $_SESSION = [];
+            session_destroy();
             echo json_encode(['success' => true, 'message' => 'Compte supprimé.']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Erreur lors de la suppression.']);
