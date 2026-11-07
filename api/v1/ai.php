@@ -4,7 +4,8 @@
  * Sécurisé, gère les CORS, les erreurs d'API, et masque la clé privée.
  */
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+require_once __DIR__ . '/../../config/api.php';
+kwizy_require_teacher();
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
@@ -142,7 +143,7 @@ if ($response === false || $httpCode !== 200) {
     echo json_encode([
         'error' => 'Erreur de communication avec Mistral AI.',
         'details' => $curlError ?: "Code HTTP $httpCode",
-        'raw' => $response
+        'raw' => null
     ]);
     exit;
 }
