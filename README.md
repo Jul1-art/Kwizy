@@ -1,6 +1,6 @@
 # Kwizy
 
-Kwizy is a modern, web-based interactive classroom and quiz platform designed for teachers and students. It offers real-time quiz monitoring, anti-cheating mechanisms, AI-assisted quiz generation and analysis, as well as an intuitive student experience.
+Kwizy is a **100% open source**, **100% free** interactive classroom and quiz platform designed for teachers and students. It offers real-time quiz monitoring, anti-cheating mechanisms, AI-assisted quiz generation and analysis, as well as an intuitive student experience — with **no server required** and **no database**: everything runs locally in the browser.
 
 ---
 
@@ -14,7 +14,30 @@ Kwizy is a modern, web-based interactive classroom and quiz platform designed fo
   - Comprehensive pedagogical insights and classroom performance analysis.
   - Student-specific error breakdowns and personalized revision suggestions.
   - Interactive pedagogical chat assistant for quiz reports.
+- **Local-first & Offline-ready**: Accounts, quizzes and results are stored in the browser (localStorage) — no account leaks, no external server, works even offline thanks to the Service Worker.
 - **Responsive & Modern UI**: Built with a sleek dark/light theme using modern CSS and Tailwind styling.
+- **Windows Desktop App**: Downloadable portable/installer .exe built with Electron ([download the beta](https://github.com/Jul1-art/Kwizy/releases/download/v1.0.0-beta/Kwizy-Portable.exe)).
+
+---
+
+## 🌐 Try it now — No installation
+
+Kwizy is hosted on GitHub Pages and works directly in any modern browser:
+
+> **https://jul1-art.github.io/Kwizy/**
+
+Nothing to configure: teachers create a local account, students join with a quiz access code. The optional AI features use your own Mistral API key, stored **only in your browser**.
+
+---
+
+## 🖥️ Desktop App for Windows (beta)
+
+A native Windows wrapper of the web app (Electron) is available on the [Releases page](https://github.com/Jul1-art/Kwizy/releases) and as a direct download from the [homepage](https://jul1-art.github.io/Kwizy/):
+
+- **`Kwizy-Portable.exe`** — no installation, run it from anywhere (great for shared school computers without admin rights).
+- **`Kwizy-Setup.exe`** — classic one-click installer.
+
+> ℹ️ Both are currently distributed as **beta** builds. Bugs and feedback can be reported in [Issues](https://github.com/Jul1-art/Kwizy/issues).
 
 ---
 
@@ -26,57 +49,53 @@ Kwizy/
 │   ├── index.html          # Main portal
 │   ├── eleves/             # Student interface (classroom & quiz runner)
 │   ├── professeurs/        # Teacher portal, dashboard & live monitoring
-│   └── assets/             # CSS stylesheets and icons
-├── api/                    # PHP REST API backend
-│   ├── router.php          # Central API router
-│   └── v1/                 # API endpoints (auth, quiz, session, monitoring, AI)
-├── models/                 # PHP Data models (User, Quiz, Session, Result)
-├── config/                 # Application configuration (DB, environment, logger)
-├── logs/                   # System and event logs
-└── LICENSE                 # Apache 2.0 License
+│   ├── quiz/               # Quiz runner & anti-cheating engine
+│   ├── landing/            # Project story page
+│   ├── AI/                 # Client-side Mistral AI engine (KwizyEngine.js)
+│   └── assets/             # CSS, icons, Service Worker & KwizyLocalDB
+├── desktop/                # Windows desktop app (Electron wrapper)
+├── LICENSE                 # Apache 2.0 License
+└── README.md
+```
+
+In local-first mode, `public/assets/kwizy-local-db.js` (`KwizyLocalDB`) replaces the former PHP/MySQL backend: it intercepts all API calls and serves them from localStorage.
+
+---
+
+## 🛠️ Development
+
+No build step and no server-side stack is required — Kwizy is a pure static front-end. To hack on it locally:
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/Jul1-art/Kwizy.git
+   cd Kwizy
+   ```
+
+2. **Serve the `public/` folder with any static server**:
+   ```bash
+   npx serve public
+   # or: python -m http.server 8080 -d public
+   ```
+
+3. Open `http://localhost:3000` (or the port your server reports).
+
+### Desktop app (Electron)
+
+```bash
+cd desktop
+npm install
+npm start          # run the app in dev mode
+npm run dist       # build portable .exe + NSIS installer (Windows)
 ```
 
 ---
 
-## 🛠️ Getting Started
+## 🔒 Security & Privacy
 
-### Prerequisites
-
-- **PHP 8.0+** with `pdo_mysql` and `curl` extensions enabled
-- **MySQL / MariaDB** database
-- **Web server**: Apache (with `mod_rewrite` enabled) or Nginx
-
-### Installation & Setup
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/your-username/Kwizy.git
-   cd Kwizy
-   ```
-
-2. **Database Configuration**:
-   - Create a MySQL database and import the initial schema.
-   - Configure your database credentials in `config/db.php`:
-     ```php
-     $host = getenv('DB_HOST') ?: 'localhost';
-     $dbname = getenv('DB_NAME') ?: 'kwizy_db';
-     $username = getenv('DB_USER') ?: 'root';
-     $password = getenv('DB_PASS') ?: '';
-     ```
-
-3. **AI Integration**:
-   - Configure your Mistral API key using environment variables or in `api/v1/ai.php`.
-
-4. **Web Server Setup**:
-   - Set the document root or alias pointing to the project root or `/public`.
-   - Ensure the `.htaccess` rewrite rules are enabled for routing requests through `api/router.php`.
-
----
-
-## 🔒 Security Best Practices
-
-- **Never commit production credentials**: Always keep your real database passwords and AI API keys outside version control (use environment variables or an ignored local configuration file).
-- Keep the `logs/` directory protected and excluded from public access.
+- **No account data leaves the device**: teacher accounts, quizzes and results live in browser localStorage. Clearing browser data removes them, so export/back up important quizzes.
+- **Never commit API keys**: the Mistral AI key is entered per-user and stored locally in the browser; it is never sent to Kwizy's repository or infrastructure.
+- **Anti-cheating is enforced client-side** (fullscreen enforcement, tab/focus tracking, keyboard lockdown) and surfaced live to the teacher dashboard.
 
 ---
 

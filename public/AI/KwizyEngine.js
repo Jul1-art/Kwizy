@@ -106,7 +106,6 @@ void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(
 // ───────────────────────────────────────────────────────────────────────────
 
 window.KwizyAIEngine = {
-    endpoint: window.location.origin + window.location.pathname.split('/professeurs/')[0] + '/api/v1/ai.php',
     mode: 'landing',
     _lastGenerated: null,
     _currentPrompt: '',

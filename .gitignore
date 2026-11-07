@@ -2,22 +2,17 @@
 node_modules/
 vendor/
 
-# Environment and sensitive configuration
+# Desktop app build artifacts (Electron)
+desktop/dist/
+
+# Environment and sensitive configuration (Mistral keys, local settings)
 .env
 .env.*
 !.env.example
-config/db.local.php
 
 # Logs
 logs/*.log
 *.log
-
-# Uploads & Temporary files
-.uploads/*
-!.uploads/.gitkeep
-scratch/
-scratch_script_*.js
-temp_*.js
 
 # IDE & Editor files
 .vscode/

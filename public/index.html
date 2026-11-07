@@ -162,6 +162,18 @@
             padding: 1.5rem;
         }
 
+        .portal-btn:nth-child(4) {
+            animation-delay: 0.4s;
+            grid-column: span 2;
+            min-height: 110px;
+            padding: 1.5rem;
+        }
+
+        /* Bouton téléchargement — accent bleu Kwizy */
+        .portal-btn.download {
+            border: 1.5px solid var(--secondary);
+        }
+
         /* Réservé aux appareils avec souris pour éviter les bugs tactiles "collants" */
         @media (hover: hover) {
             .portal-btn:hover {
@@ -296,6 +308,12 @@
                 min-height: 110px;
             }
 
+            .portal-btn:nth-child(4) {
+                grid-column: span 1;
+                aspect-ratio: auto;
+                min-height: 110px;
+            }
+
             .btn-title {
                 font-size: 1.35rem;
             }
@@ -379,6 +397,11 @@
 
         <a href="landing/landing.html" class="portal-btn">
             <span class="btn-title">Histoire du projet</span>
+        </a>
+
+        <a href="https://github.com/Jul1-art/Kwizy/releases/download/v1.0.0-beta/Kwizy-Portable.exe" class="portal-btn download">
+            <span class="btn-subtitle">Application Windows • gratuite • open source • beta</span>
+            <span class="btn-title"><i class="fab fa-windows"></i> Télécharger pour Windows</span>
         </a>
     </div>
 

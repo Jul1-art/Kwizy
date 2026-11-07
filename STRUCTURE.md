@@ -1,87 +1,72 @@
-# 🧠 Kwizy — Carte Mentale de l'Architecture (V2 Modular)
+# 🧠 Kwizy — Carte Mentale de l'Architecture (Local-first)
 
-Ce fichier représente la structure actuelle du projet Kwizy. Il sert de guide pour la navigation et le développement.
+Ce fichier représente la structure actuelle du projet Kwizy, un projet **100% open source** fonctionnant **sans serveur ni base de données** : tout tourne dans le navigateur (mode local-first). Il sert de guide pour la navigation et le développement.
 
 ---
 
 ## 📂 Arborescence Globale (Fichiers Réels)
 
 ```text
-根 (Root)
+Kwizy/
+├── 📄 index.html                      ← Portail racine (GitHub Pages, liens vers public/)
 ├── 📂 public/ (Racine Web - Public Facing)
-│   ├── 📄 index.html              ← Portail d'entrée principal
-│   ├── 📄 404.html                ← Page d'erreur personnalisée
-│   ├── 📄 sw.js                   ← Service Worker (PWA & Offline)
-│   ├── 📄 manifest.json           ← Manifeste PWA
-│   ├── 📂 eleves/                 ← Espace Étudiant
-│   │   └── 📄 classroom.html      ← Accès aux quiz (Code/QR)
-│   ├── 📂 professeurs/            ← Espace Enseignant
-│   │   ├── 📄 login.html          ← Connexion Professeur
-│   │   ├── 📄 inscription.html    ← Inscription Professeur
-│   │   ├── 📄 professeurs.html    ← Dashboard Gestion Quiz
-│   │   └── 📂 monitoring/         ← Live Tracking
-│   │       └── 📄 dashboard.html  ← Surveillance en temps réel
-│   ├── 📂 quiz/                   ← Moteur de Quiz
-│   │   └── 📄 quiz.html           ← Interface de passage & Anti-triche
-│   ├── 📂 landing/                ← Présentation
-│   │   └── 📄 landing.html        ← Page de présentation du projet
-│   ├── 📂 assets/                 ← Ressources statiques
-│   │   ├── 📄 tailwind.css        ← Styles compilés
-│   │   ├── 📄 tailwind.src.css    ← Source Tailwind
-│   │   ├── 📄 icon-192.png        ← Icône PWA 192px
-│   │   └── 📄 icon-512.png        ← Icône PWA 512px
-│   └── 📂 AI/                     ← Scripts Frontend IA
-│       ├── 📄 KwizyEngine.js    ← Moteur de traitement IA
-│       └── 📄 ai.html             ← Interface IA standalone
+│   ├── 📄 index.html                  ← Portail d'entrée principal
+│   ├── 📄 404.html                    ← Page d'erreur personnalisée
+│   ├── 📄 sw.js                       ← Service Worker (PWA & Offline)
+│   ├── 📄 manifest.json               ← Manifeste PWA
+│   ├── 📂 eleves/                     ← Espace Étudiant
+│   │   └── 📄 classroom.html          ← Accès aux quiz (Code/QR)
+│   ├── 📂 professeurs/                ← Espace Enseignant
+│   │   ├── 📄 login.html              ← Connexion Professeur
+│   │   ├── 📄 inscription.html        ← Inscription Professeur
+│   │   ├── 📄 professeurs.html        ← Dashboard Gestion Quiz
+│   │   ├── 📄 mistral_ai_widget.html  ← Widget IA embarqué
+│   │   └── 📂 monitoring/             ← Live Tracking
+│   │       └── 📄 dashboard.html      ← Surveillance en temps réel
+│   ├── 📂 quiz/                       ← Moteur de Quiz
+│   │   └── 📄 quiz.html               ← Interface de passage & Anti-triche
+│   ├── 📂 landing/                    ← Présentation
+│   │   └── 📄 landing.html            ← Page de présentation du projet
+│   ├── 📂 assets/                     ← Ressources statiques
+│   │   ├── 📄 kwizy-local-db.js       ← KwizyLocalDB (remplace le backend PHP)
+│   │   ├── 📄 kwizy-loader.js         ← Loader d'entrée
+│   │   ├── 📄 tailwind.css            ← Styles compilés
+│   │   ├── 📄 icon-192.png            ← Icône PWA 192px
+│   │   └── 📄 icon-512.png            ← Icône PWA 512px
+│   └── 📂 AI/                         ← Scripts Frontend IA
+│       ├── 📄 KwizyEngine.js          ← Moteur IA (Mistral, côté client)
+│       └── 📄 ai.html                 ← Interface IA standalone
 │
-├── 📂 api/ (Backend API v1)
-│   ├── 📄 .htaccess               ← Routage & Sécurité API
-│   ├── 📄 router.php              ← Point d'entrée central (Routeur)
-│   └── 📂 v1/                     ← Contrôleurs (Logique métier)
-│       ├── 📄 auth.php            ← Login/Register
-│       ├── 📄 quiz.php            ← CRUD Quiz & Accès
-│       ├── 📄 lookup.php          ← Recherche de quiz pour élèves
-│       ├── 📄 session.php         ← Gestion des sessions élèves
-│       ├── 📄 results.php         ← Consultation des résultats (Prof)
-│       ├── 📄 monitoring.php      ← Live feed & Déverrouillage
-│       └── 📄 ai.php              ← Proxy Mistral AI
-│
-├── 📂 models/ (Abstraction de Données)
-│   ├── 📄 User.php                ← Modèle Enseignant
-│   ├── 📄 Quiz.php                ← Modèle Questionnaire
-│   ├── 📄 Session.php             ← Modèle Session élève
-│   └── 📄 Result.php              ← Modèle Résultats/Copies
-│
-├── 📂 config/ (Paramètres Sensibles)
-│   ├── 📄 .htaccess               ← BLOQUE TOUT ACCÈS WEB
-│   ├── 📄 db.php                  ← Connexion MySQL PDO
-│   ├── 📄 env.php                 ← Variables d'environnement
-│   └── 📄 logger.php              ← Système de logs centralisé
-│
-├── 📂 logs/ (Journaux Système)
-│   ├── 📄 errors.log              ← Erreurs PHP/Serveur
-│   ├── 📄 cheating.log            ← Détections anti-triche
-│   ├── 📄 access.log              ← Tracking HTTP
-│   └── 📄 ai.log                  ← Historique appels Mistral
-│
-├── 📄 .htaccess                   ← Configuration serveur racine (Redirection /public/)
-├── 📄 tailwind.config.js          ← Config Tailwind CSS
-├── 📄 package.json                ← Dépendances Node.js
-├── 📄 migration_v2.sql            ← Script de mise à jour DB
-├── 📄 schema.sql                  ← Structure initiale de la DB
-└── 📄 KWIZY_BLUEPRINT.md        ← Spécifications du projet
+└── 📂 desktop/                        ← Application Windows (Electron)
+    ├── 📄 main.js                     ← Fenêtre native + online/offline
+    ├── 📄 package.json                ← Config Electron & electron-builder
+    └── 📂 build/                      ← Icône de l'exécutable
 ```
 
----
-
-## 🛠️ Flux de Données
-
-1.  **Requête Client** : L'utilisateur charge une page dans `public/`.
-2.  **Appel API** : Le JavaScript `fetch` vers `api/router.php`.
-3.  **Routage** : Le routeur délègue au contrôleur `api/v1/*.php`.
-4.  **Logique & Données** : Le contrôleur utilise un `models/*.php`.
-5.  **Persistance** : Le modèle communique avec la base via `config/db.php`.
-6.  **Réponse** : L'API renvoie du JSON au frontend.
+> 🗄️ **Historique** : l'ancien backend `api/`, `models/`, `config/` (PHP/MySQL, hébergé Hostinger) a été supprimé — git conserve l'historique.
 
 ---
-*Dernière mise à jour : 13 Mai 2026 (Audit complet des fichiers)*
+
+## 🛠️ Flux de Données (Local-first)
+
+1. **Requête Client** : L'utilisateur charge une page dans `public/`.
+2. **Interception** : Toute appel d'API passe par `KwizyLocalDB.handleRequest` (`public/assets/kwizy-local-db.js`), qui joue le rôle de l'ancienne API.
+3. **Logique & Données** : KwizyLocalDB exploite et met à jour les données persistées dans `localStorage` (professeur/élève).
+4. **Réponse** : Une réponse JSON locale (mock `Response`) est renvoyée au frontend — identique au contrat de l'ancienne API PHP.
+5. **IA (optionnelle)** : `KwizyEngine.js` appelle directement `https://api.mistral.ai` **du navigateur** avec la clé de l'utilisateur (stockée localement).
+6. **Temps réel** : Le monitoring lit/écrit les sessions via KwizyLocalDB (aucune socket externe requise en mode local).
+
+---
+
+## 🖥️ Application Desktop
+
+`desktop/` contient un wrapper **Electron** qui affiche le site Kwizy (GitHub Pages) dans une fenêtre native Windows, sans barre d'adresse. Build :
+
+```bash
+cd desktop && npm install && npm run dist
+```
+
+Artefacts : `Kwizy-Portable.exe` (sans installation) et `Kwizy-Setup.exe` (installeur NSIS), publiés sur [GitHub Releases](https://github.com/Jul1-art/Kwizy/releases).
+
+---
+*Dernière mise à jour : Novembre 2026 — Migration local-first 100% open source.*
