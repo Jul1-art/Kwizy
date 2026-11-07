@@ -1,0 +1,59 @@
+{
+  "name": "kwizy",
+  "productName": "Kwizy",
+  "version": "1.0.0-beta",
+  "description": "Kwizy — plateforme interactive de QCM pour professeurs et élèves",
+  "homepage": "https://github.com/Jul1-art/Kwizy",
+  "author": "Jules Ferrier <jules.ferrier2909@gmail.com>",
+  "license": "Apache-2.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "fr.kwizy.app",
+    "productName": "Kwizy",
+    "copyright": "Copyright © 2024-2026 Jules Ferrier & Elior Pons",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "Kwizy-Portable.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": true,
+      "artifactName": "Kwizy-Setup.${ext}"
+    }
+  },
+  "allowScripts": {
+    "electron@33.4.11": true
+  }
+}
