@@ -4,7 +4,6 @@
  * Recherche d'un quiz par son code de partage — vue élève (sans données correctes)
  */
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
@@ -76,9 +75,7 @@ try {
             'points'               => (int)$qDb['points'],
             'image'                => $qDb['image'],
             'options'              => $items,
-            'correctOptionIndex'   => $correctOptionIndex,
-            'correctOptionIndexes' => $correctOptionIndexes,
-            'expectedAnswer'       => $expectedAnswer
+            'optionCount' => count($items)
         ];
     }
 
@@ -95,6 +92,6 @@ try {
 } catch (Exception $e) {
     http_response_code(500);
     error_log("Quiz Lookup Error: " . $e->getMessage());
-    echo json_encode(['status' => 'error', 'message' => 'Erreur serveur: ' . $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => 'Une erreur serveur est survenue.']);
 }
 ?>
