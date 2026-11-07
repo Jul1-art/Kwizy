@@ -5,12 +5,11 @@
  */
 
 // Temporairement activer les erreurs pour debug
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 error_reporting(E_ALL);
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
@@ -27,6 +26,8 @@ if (!file_exists($dbPath)) {
     exit;
 }
 require_once $dbPath;
+require_once __DIR__ . '/../../config/api.php';
+$teacherId = kwizy_require_teacher();
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
@@ -56,14 +57,23 @@ try {
         $code   = $_GET['code']    ?? null;
 
         if (!$quizId && $code) {
-            $s = $pdo->prepare('SELECT id, statut FROM quizs WHERE code = ?');
-            $s->execute([$code]);
+            $s = $pdo->prepare('SELECT id, statut FROM quizs WHERE code = ? AND professeur_id = ?');
+            $s->execute([$code, $teacherId]);
             $q = $s->fetch();
             $quizId = $q['id'] ?? null;
         }
 
         if (!$quizId) {
-            echo json_encode(['success' => false, 'message' => 'quiz_id ou code requis.']);
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Quiz introuvable.']);
+            exit;
+        }
+        $owner = $pdo->prepare('SELECT id, statut FROM quizs WHERE id = ? AND professeur_id = ?');
+        $owner->execute([$quizId, $teacherId]);
+        $q = $owner->fetch();
+        if (!$q) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Quiz introuvable.']);
             exit;
         }
 
@@ -95,8 +105,8 @@ try {
             exit;
         }
 
-        $stmt = $pdo->prepare('SELECT id, statut, teacher_last_seen FROM quizs WHERE code = ?');
-        $stmt->execute([$code]);
+        $stmt = $pdo->prepare('SELECT id, statut, teacher_last_seen FROM quizs WHERE code = ? AND professeur_id = ?');
+        $stmt->execute([$code, $teacherId]);
         $quiz = $stmt->fetch();
         
         $totalQuestions = 0;
@@ -174,7 +184,7 @@ try {
 
         // Mettre à jour la présence du prof EN PREMIER
         // (pour que la visite courante empêche un auto-revert intem pestif)
-        $pdo->prepare('UPDATE quizs SET teacher_last_seen = CURRENT_TIMESTAMP WHERE id = ?')->execute([$quiz['id']]);
+        $pdo->prepare('UPDATE quizs SET teacher_last_seen = CURRENT_TIMESTAMP WHERE id = ? AND professeur_id = ?')->execute([$quiz['id'], $teacherId]);
 
         // --- AUTO-REVERT : seulement si le quiz est "lance", teacher_last_seen ETAIT non-null
         //     et le prof était absent depuis plus de 2 minutes, ET aucun élève actif
@@ -191,7 +201,7 @@ try {
                 
                 // Réverter uniquement si vraiment absent ET aucun élève
                 if ($activeSessionCount === 0 && $secSinceTeacher > 120) {
-                    $pdo->prepare('UPDATE quizs SET statut = "publie" WHERE id = ?')->execute([$quiz['id']]);
+                    $pdo->prepare('UPDATE quizs SET statut = "publie" WHERE id = ? AND professeur_id = ?')->execute([$quiz['id'], $teacherId]);
                     $quiz['statut'] = 'publie';
                 }
             }
@@ -210,23 +220,18 @@ try {
         $studentId = $data['studentId'] ?? null;
         $code      = $data['code']      ?? null;
 
-        if (!$studentId) {
-            echo json_encode(['success' => false, 'message' => 'studentId requis.']);
+        if (!$studentId || !$code) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'studentId et code requis.']);
             exit;
         }
-
-        if ($code) {
-            $stmt = $pdo->prepare('
-                UPDATE sessions_eleves se
-                JOIN quizs q ON se.quiz_id = q.id
-                SET se.is_locked = 0
-                WHERE se.student_id = ? AND q.code = ?
-            ');
-            $stmt->execute([$studentId, $code]);
-        } else {
-            $stmt = $pdo->prepare('UPDATE sessions_eleves SET is_locked = 0 WHERE student_id = ?');
-            $stmt->execute([$studentId]);
-        }
+        $stmt = $pdo->prepare('
+            UPDATE sessions_eleves se
+            JOIN quizs q ON se.quiz_id = q.id
+            SET se.is_locked = 0
+            WHERE se.student_id = ? AND q.code = ? AND q.professeur_id = ?
+        ');
+        $stmt->execute([$studentId, $code, $teacherId]);
 
         echo json_encode(['success' => true, 'message' => 'Élève déverrouillé.']);
         exit;
@@ -240,8 +245,13 @@ try {
             exit;
         }
         // Mettre à jour le statut ET teacher_last_seen pour éviter un auto-revert immédiat
-        $stmt = $pdo->prepare('UPDATE quizs SET statut = "lance", teacher_last_seen = CURRENT_TIMESTAMP WHERE code = ?');
-        $stmt->execute([$code]);
+        $stmt = $pdo->prepare('UPDATE quizs SET statut = "lance", teacher_last_seen = CURRENT_TIMESTAMP WHERE code = ? AND professeur_id = ?');
+        $stmt->execute([$code, $teacherId]);
+        if (!$stmt->rowCount()) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Quiz introuvable.']);
+            exit;
+        }
         echo json_encode(['success' => true, 'message' => 'Quiz lancé !']);
         exit;
     }
@@ -255,16 +265,21 @@ try {
         }
 
         // 1. Remettre le quiz en mode "publié" (attente)
-        $stmt = $pdo->prepare('UPDATE quizs SET statut = "publie" WHERE code = ?');
-        $stmt->execute([$code]);
+        $stmt = $pdo->prepare('UPDATE quizs SET statut = "publie" WHERE code = ? AND professeur_id = ?');
+        $stmt->execute([$code, $teacherId]);
+        if (!$stmt->rowCount()) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Quiz introuvable.']);
+            exit;
+        }
 
         // 2. Supprimer toutes les sessions de ce quiz qui ne sont pas terminées
         $stmt2 = $pdo->prepare('
             DELETE se FROM sessions_eleves se
             JOIN quizs q ON se.quiz_id = q.id
-            WHERE q.code = ? AND (se.statut = "en_cours" OR se.statut IS NULL)
+            WHERE q.code = ? AND q.professeur_id = ? AND (se.statut = "en_cours" OR se.statut IS NULL)
         ');
-        $stmt2->execute([$code]);
+        $stmt2->execute([$code, $teacherId]);
 
         echo json_encode(['success' => true, 'message' => 'Session clôturée et élèves non terminés effacés.']);
         exit;
@@ -272,9 +287,9 @@ try {
 
     echo json_encode(['success' => false, 'message' => 'Action non reconnue.']);
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
     http_response_code(500);
     error_log("Monitoring Error: " . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Erreur serveur: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Une erreur serveur est survenue.']);
 }
 ?>
