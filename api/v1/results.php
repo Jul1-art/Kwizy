@@ -3,7 +3,6 @@
  * KWIZY - Results API (professeurs/)
  */
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
@@ -13,6 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../../config/api.php';
+$teacherId = kwizy_require_teacher();
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -21,8 +22,8 @@ try {
     if ($method === 'GET' && isset($_GET['code'])) {
         $code = $_GET['code'];
 
-        $stmt = $pdo->prepare('SELECT * FROM quizs WHERE code = ?');
-        $stmt->execute([$code]);
+        $stmt = $pdo->prepare('SELECT * FROM quizs WHERE code = ? AND professeur_id = ?');
+        $stmt->execute([$code, $teacherId]);
         $quiz = $stmt->fetch();
 
         if (!$quiz) {
@@ -70,8 +71,8 @@ try {
         }
 
         // Trouver l'ID du quiz
-        $stmt = $pdo->prepare('SELECT id FROM quizs WHERE code = ?');
-        $stmt->execute([$code]);
+        $stmt = $pdo->prepare('SELECT id FROM quizs WHERE code = ? AND professeur_id = ?');
+        $stmt->execute([$code, $teacherId]);
         $quiz = $stmt->fetch();
 
         if ($quiz) {
