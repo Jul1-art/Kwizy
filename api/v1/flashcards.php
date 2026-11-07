@@ -3,6 +3,8 @@
  * KWIZY AI - Mistral Backend for Flashcards
  */
 header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/../../config/api.php';
+kwizy_require_teacher();
 
 $headers = getallheaders();
 $userApiKey = $headers['X-Mistral-Key'] ?? ($headers['x-mistral-key'] ?? '');
